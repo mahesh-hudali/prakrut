@@ -1,0 +1,5 @@
+torch>=2.0
+fairseq==0.12.2
+indic-nlp-library>=0.81
+flask>=3.0
+flask-cors>=4.0

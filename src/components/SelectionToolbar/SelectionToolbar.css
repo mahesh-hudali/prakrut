@@ -1,0 +1,82 @@
+.selection-toolbar {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.25rem 0.35rem;
+  background: #2b2822;
+  color: #f4efe4;
+  border-radius: 8px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+  font-size: 0.85rem;
+}
+
+.selection-btn {
+  border: 0;
+  background: transparent;
+  color: #e6e0d3;
+  font: inherit;
+  padding: 0.3rem 0.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.selection-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.selection-btn.is-active {
+  background: #f5ff3d;
+  color: #26231f;
+}
+
+.selection-btn.mark-bold {
+  font-weight: 700;
+}
+
+.selection-btn.mark-italic {
+  font-style: italic;
+}
+
+.selection-btn.mark-underline {
+  text-decoration: underline;
+}
+
+.selection-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.18);
+  margin: 0 0.15rem;
+}
+
+.selection-swatches {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.selection-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  padding: 0;
+}
+
+.selection-swatch:hover {
+  transform: scale(1.15);
+}
+
+.selection-comment {
+  font-size: 0.8rem;
+}
+
+@media print {
+  .selection-toolbar {
+    display: none !important;
+  }
+}

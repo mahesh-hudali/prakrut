@@ -1,0 +1,84 @@
+.left-panel {
+  width: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #f2ede2;
+  border-right: 1px solid #ddd5c5;
+  transition: width 220ms ease;
+}
+
+.left-panel.is-open {
+  width: 288px;
+}
+
+.left-panel-scroll {
+  width: 288px;
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.left-panel-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.5rem 0.6rem 0;
+  border-bottom: 1px solid #e2dacb;
+  position: sticky;
+  top: 0;
+  background: #f2ede2;
+  z-index: 1;
+}
+
+.left-panel-tab {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #857b6b;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.left-panel-tab.is-active {
+  color: #26231f;
+  border-bottom-color: #0f5c4c;
+}
+
+.left-panel-tabs .panel-close {
+  margin-left: auto;
+}
+
+/* The drawer owns the width; the settings panel just fills it. */
+.left-panel .document-settings {
+  width: 100%;
+  border-right: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+@media (max-width: 1100px) {
+  .left-panel.is-open {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 45;
+    width: min(300px, 88vw);
+    box-shadow: 12px 0 30px rgba(0, 0, 0, 0.16);
+  }
+
+  .left-panel.is-open .left-panel-scroll {
+    width: 100%;
+  }
+}
+
+@media print {
+  .left-panel {
+    display: none !important;
+  }
+}

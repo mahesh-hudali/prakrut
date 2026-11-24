@@ -1,0 +1,100 @@
+.page-content {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  outline: none;
+  caret-color: #26231f;
+}
+
+.page-paragraph {
+  position: relative;
+  margin: 0;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  min-height: 1.2em;
+}
+
+/*
+ * Exactly one placeholder is ever emitted (see pageDom.js), so an empty
+ * manuscript shows a single prompt instead of one per paragraph.
+ */
+.page-paragraph[data-placeholder]::before {
+  content: attr(data-placeholder);
+  color: #b5ac99;
+  pointer-events: none;
+  position: absolute;
+}
+
+.page-paragraph.is-continuation {
+  text-indent: 0 !important;
+}
+
+
+.page-paragraph.style-chapterTitle {
+  letter-spacing: 0.02em;
+}
+
+.page-paragraph.style-sceneBreak {
+  letter-spacing: 0.35em;
+}
+
+/* Script-writing paragraph types */
+.page-paragraph.style-character {
+  text-transform: none;
+}
+
+.page-paragraph.style-dialogue {
+  border-left: 1px solid rgba(38, 35, 31, 0.08);
+}
+
+/* Inline marks */
+.mark-bold {
+  font-weight: 700;
+}
+
+.mark-italic {
+  font-style: italic;
+}
+
+.mark-underline {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+/*
+ * Permanent comment highlight.
+ * Unresolved comments stay neon so they are impossible to miss; resolved ones
+ * fall back to a muted trace that does not compete with the text.
+ */
+.comment-mark.is-unresolved {
+  background: var(--comment-highlight, #f5ff3d);
+  box-shadow: 0 0 0 1px rgba(190, 205, 0, 0.45),
+    0 0 6px rgba(226, 255, 0, 0.55);
+  border-radius: 2px;
+  padding: 0 0.05em;
+  cursor: pointer;
+  color: #1d1a15;
+}
+
+.comment-mark.is-resolved {
+  background: transparent;
+  border-bottom: 1px dotted rgba(38, 35, 31, 0.35);
+  cursor: pointer;
+}
+
+.comment-mark.is-focused {
+  outline: 2px solid rgba(15, 92, 76, 0.55);
+  outline-offset: 1px;
+}
+
+
+@media print {
+  .comment-mark.is-unresolved,
+  .comment-mark.is-resolved {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-bottom: 0 !important;
+  }
+}

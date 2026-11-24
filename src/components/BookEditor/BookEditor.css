@@ -1,0 +1,151 @@
+/*
+ * Kindle / physical-paper workspace.
+ * Warm, low-contrast chrome so the manuscript page is the brightest thing
+ * on screen — no dashboard cards, no bright white, minimal borders.
+ */
+.book-editor {
+  --paper: #f8f4ea;
+  --workspace: #e7e2d8;
+  --ink: #26231f;
+
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  background: var(--workspace);
+  color: var(--ink);
+}
+
+.book-editor-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.book-stage {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 2.25rem 1.5rem 3.5rem;
+  background: var(--workspace);
+  /* Barely-there vignette keeps the page feeling lit from above. */
+  background-image: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0) 60%
+  );
+}
+
+/*
+ * Pages stay centered and keep their physical size regardless of how many
+ * panels are open, so closing a drawer never reflows the book.
+ */
+.book-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.9rem;
+  width: max-content;
+  margin: 0 auto;
+  min-width: 100%;
+}
+
+.book-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.15rem;
+  align-items: center;
+  padding: 0.45rem 0.9rem;
+  background: #ece6da;
+  border-top: 1px solid #ddd5c5;
+  font-size: 0.8rem;
+  color: #6a6256;
+}
+
+.book-status strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.book-status-zoom {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.book-status-zoom select {
+  border: 1px solid #d5cbb6;
+  background: #fffdf7;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.1rem 0.25rem;
+}
+
+.book-status-hint {
+  margin-left: auto;
+  color: #7d7466;
+}
+
+/* Focus mode: chrome recedes, the book keeps its exact dimensions. */
+.book-editor.is-focus-mode .book-stage {
+  padding-top: 3rem;
+  background-image: none;
+}
+
+.book-editor.is-focus-mode .book-status {
+  opacity: 0.35;
+  transition: opacity 180ms ease;
+}
+
+.book-editor.is-focus-mode .book-status:hover {
+  opacity: 1;
+}
+
+@media (max-width: 700px) {
+  .book-stage {
+    padding: 1.25rem 0.75rem 2.5rem;
+  }
+
+  .book-status-hint {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+@media print {
+  .editor-toolbar,
+  .left-panel,
+  .comments-panel,
+  .document-settings,
+  .book-status,
+  .xlit-suggestions,
+  .selection-toolbar,
+  .comment-composer,
+  .recovery-prompt,
+  .export-menu,
+  .export-dropdown {
+    display: none !important;
+  }
+
+  .book-editor,
+  .book-editor-body,
+  .book-stage {
+    background: white !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  .book-stack {
+    gap: 0;
+    transform: none !important;
+  }
+
+  .book-page {
+    box-shadow: none !important;
+    border: 0 !important;
+    break-after: page;
+    page-break-after: always;
+  }
+}

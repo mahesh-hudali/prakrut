@@ -1,0 +1,141 @@
+.chapter-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem 0.9rem 1.5rem;
+}
+
+.chapter-sidebar h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6a6256;
+  font-weight: 600;
+}
+
+.chapter-sidebar-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.chapter-add {
+  border: 1px solid #d5cbb6;
+  background: transparent;
+  border-radius: 5px;
+  font-size: 0.74rem;
+  padding: 0.15rem 0.45rem;
+  cursor: pointer;
+  color: #5a5348;
+}
+
+.chapter-add:hover {
+  background: #e8e0d0;
+}
+
+.front-matter-list,
+.chapter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.front-matter-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: #4f493f;
+  padding: 0.15rem 0;
+  cursor: pointer;
+}
+
+.chapter-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 5px;
+  padding: 0.1rem 0.15rem;
+}
+
+.chapter-item:hover {
+  background: #e9e1d1;
+}
+
+.chapter-item.is-active {
+  background: #e2d9c5;
+}
+
+.chapter-select {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #3a352d;
+  padding: 0.3rem 0.25rem;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.chapter-number {
+  font-size: 0.68rem;
+  color: #8b8171;
+  min-width: 1.1em;
+}
+
+.chapter-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chapter-rename {
+  flex: 1;
+  border: 1px solid #b9ae96;
+  border-radius: 4px;
+  padding: 0.25rem 0.35rem;
+  font: inherit;
+  font-size: 0.85rem;
+  min-width: 0;
+}
+
+.chapter-tools {
+  display: flex;
+  gap: 0.1rem;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.chapter-item:hover .chapter-tools,
+.chapter-item.is-active .chapter-tools {
+  opacity: 1;
+}
+
+.chapter-tools button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.72rem;
+  color: #7a7163;
+  padding: 0.15rem 0.25rem;
+  border-radius: 3px;
+}
+
+.chapter-tools button:hover:not(:disabled) {
+  background: #d8cfba;
+  color: #26231f;
+}
+
+.chapter-tools button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

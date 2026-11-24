@@ -1,0 +1,41 @@
+{
+  "name": "kannada-editor",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bash scripts/run.sh",
+    "setup": "bash scripts/run.sh --setup",
+    "package": "bash scripts/package.sh",
+    "backend": "bash scripts/backend.sh",
+    "frontend": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test:pagination": "node scripts/smoke-pagination.mjs",
+    "test:export": "node scripts/smoke-export.mjs",
+    "test:integrity": "node scripts/project-integrity-test.mjs",
+    "test:browser": "node scripts/browser-smoke.mjs",
+    "test": "npm run test:pagination && npm run test:export && npm run test:integrity",
+    "test:all": "npm test && npm run test:browser"
+  },
+  "dependencies": {
+    "docx": "^9.7.1",
+    "file-saver": "^2.0.5",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/file-saver": "^2.0.7",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "jsdom": "^29.1.1",
+    "oxlint": "^1.79.0",
+    "playwright-core": "^1.62.1",
+    "vite": "^8.2.2"
+  }
+}
