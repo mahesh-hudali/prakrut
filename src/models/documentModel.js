@@ -392,3 +392,13 @@ export function settingsToCssVars(settings) {
     "--first-line-indent": `${settings.typography.firstLineIndentEm}em`,
   };
 }
+
+/** A new, empty book: one chapter, ready to type. No sample text. */
+export function createBlankDocument({ title = "Untitled book" } = {}) {
+  const doc = createDocument();
+  return {
+    ...doc,
+    metadata: { ...doc.metadata, title },
+    chapters: [createChapter({ title: "ಅಧ್ಯಾಯ ೧" })],
+  };
+}

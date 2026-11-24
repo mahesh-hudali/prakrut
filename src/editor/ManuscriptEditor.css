@@ -1,0 +1,86 @@
+.manuscript-stage {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  overflow-anchor: none;
+  padding: var(--space-10) var(--space-6);
+  background: var(--color-canvas);
+}
+
+/* Pages and text share one coordinate space; the stack scales with zoom. */
+.manuscript-stack {
+  position: relative;
+  margin: 0 auto;
+}
+
+.manuscript-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--color-paper);
+  border-radius: var(--radius-page);
+  box-shadow: var(--shadow-page);
+}
+
+.manuscript-sheet__number {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--margin-bottom) * 0.35);
+  text-align: center;
+  font-family: var(--font-family);
+  font-size: calc(var(--font-size) * 0.8);
+  color: var(--color-page-ink-muted);
+  user-select: none;
+}
+
+.manuscript-column {
+  position: absolute;
+}
+
+/* The editable text, typeset with the book's settings. */
+.manuscript {
+  outline: none;
+  color: var(--color-page-ink);
+  caret-color: var(--color-caret);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  font-weight: var(--font-weight);
+  line-height: var(--line-height);
+  letter-spacing: var(--letter-spacing);
+  text-align: var(--text-align);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.manuscript .manuscript-chapter {
+  display: block;
+}
+
+.manuscript .page-paragraph {
+  margin: 0;
+}
+
+/* Page gaps are layout only: never selectable, never visible. */
+.manuscript .page-gap {
+  user-select: none;
+  pointer-events: none;
+}
+
+/* An empty manuscript shows one prompt. */
+.manuscript .manuscript-chapter:only-child .page-paragraph:only-child:empty::before,
+.manuscript p.is-editor-empty:first-child::before {
+  content: "Start writing…";
+  color: var(--color-page-placeholder);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+@media print {
+  .manuscript-stage {
+    padding: 0;
+    overflow: visible;
+  }
+}

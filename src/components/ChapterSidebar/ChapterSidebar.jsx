@@ -1,5 +1,14 @@
 import { useState } from "react";
+import { Button, Checkbox, IconButton, PanelSection, TextInput } from "../../design-system";
 import "./ChapterSidebar.css";
+
+const FRONT_MATTER = [
+  ["cover", "Cover"],
+  ["titlePage", "Title page"],
+  ["copyright", "Copyright"],
+  ["dedication", "Dedication"],
+  ["contents", "Contents"],
+];
 
 export default function ChapterSidebar({
   chapters,
@@ -14,6 +23,7 @@ export default function ChapterSidebar({
 }) {
   const [renamingId, setRenamingId] = useState(null);
   const [draftTitle, setDraftTitle] = useState("");
+  const count = chapters?.length ?? 0;
 
   const commitRename = () => {
     const title = draftTitle.trim();
@@ -22,58 +32,27 @@ export default function ChapterSidebar({
   };
 
   return (
-    <div className="chapter-sidebar">
-      <section>
-        <h2>Front matter</h2>
-        <ul className="front-matter-list">
-          {[
-            ["cover", "Cover"],
-            ["titlePage", "Title Page"],
-            ["copyright", "Copyright"],
-            ["dedication", "Dedication"],
-            ["contents", "Contents"],
-          ].map(([key, label]) => (
-            <li key={key}>
-              <label className="front-matter-item">
-                <input
-                  type="checkbox"
-                  checked={Boolean(frontMatter?.[key])}
-                  onChange={(event) =>
-                    onToggleFrontMatter?.(key, event.target.checked)
-                  }
-                />
-                {label}
-              </label>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section>
-        <div className="chapter-sidebar-heading">
-          <h2>Chapters</h2>
-          <button
-            type="button"
-            className="chapter-add"
-            onClick={() => onAddChapter?.()}
-            title="New chapter"
-          >
-            + New
-          </button>
-        </div>
-
-        <ul className="chapter-list">
+    <>
+      <PanelSection
+        title="Chapters"
+        action={
+          <Button size="sm" icon="plus" onClick={() => onAddChapter?.()}>
+            New chapter
+          </Button>
+        }
+      >
+        <ol className="chapter-list">
           {(chapters ?? []).map((chapter, index) => (
             <li
               key={chapter.id}
-              className={`chapter-item ${
-                chapter.id === activeChapterId ? "is-active" : ""
-              }`}
+              className={`chapter-item ${chapter.id === activeChapterId ? "is-active" : ""}`}
             >
               {renamingId === chapter.id ? (
-                <input
+                <TextInput
+                  size="sm"
                   className="chapter-rename"
                   value={draftTitle}
+                  aria-label="Chapter title"
                   autoFocus
                   onChange={(event) => setDraftTitle(event.target.value)}
                   onBlur={commitRename}
@@ -89,6 +68,7 @@ export default function ChapterSidebar({
                 <button
                   type="button"
                   className="chapter-select"
+                  aria-current={chapter.id === activeChapterId ? "true" : undefined}
                   onClick={() => onSelectChapter?.(chapter.id)}
                   onDoubleClick={() => {
                     setRenamingId(chapter.id);
@@ -97,42 +77,51 @@ export default function ChapterSidebar({
                   title="Double-click to rename"
                 >
                   <span className="chapter-number">{index + 1}</span>
-                  <span className="chapter-title">
-                    {chapter.title || "Untitled chapter"}
-                  </span>
+                  <span className="chapter-title">{chapter.title || "Untitled chapter"}</span>
                 </button>
               )}
 
               <span className="chapter-tools">
-                <button
-                  type="button"
-                  title="Move up"
+                <IconButton
+                  size="sm"
+                  icon="arrowUp"
+                  label="Move up"
                   disabled={index === 0}
                   onClick={() => onMoveChapter?.(chapter.id, -1)}
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  title="Move down"
-                  disabled={index === (chapters?.length ?? 0) - 1}
+                />
+                <IconButton
+                  size="sm"
+                  icon="arrowDown"
+                  label="Move down"
+                  disabled={index === count - 1}
                   onClick={() => onMoveChapter?.(chapter.id, 1)}
-                >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  title="Delete chapter"
-                  disabled={(chapters?.length ?? 0) <= 1}
+                />
+                <IconButton
+                  size="sm"
+                  icon="trash"
+                  label="Delete chapter"
+                  variant="danger"
+                  disabled={count <= 1}
                   onClick={() => onDeleteChapter?.(chapter.id)}
-                >
-                  ✕
-                </button>
+                />
               </span>
             </li>
           ))}
-        </ul>
-      </section>
-    </div>
+        </ol>
+      </PanelSection>
+
+      <PanelSection title="Front matter">
+        <div className="front-matter-list">
+          {FRONT_MATTER.map(([key, label]) => (
+            <Checkbox
+              key={key}
+              label={label}
+              checked={Boolean(frontMatter?.[key])}
+              onChange={(checked) => onToggleFrontMatter?.(key, checked)}
+            />
+          ))}
+        </div>
+      </PanelSection>
+    </>
   );
 }

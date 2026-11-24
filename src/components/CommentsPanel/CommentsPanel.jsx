@@ -1,4 +1,14 @@
 import { useMemo, useState } from "react";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  EmptyState,
+  Panel,
+  PanelBody,
+  PanelHeader,
+  TextArea,
+} from "../../design-system";
 import "./CommentsPanel.css";
 
 function formatTime(iso) {
@@ -42,141 +52,94 @@ export default function CommentsPanel({
   }, [comments, showResolved]);
 
   const unresolvedCount = (comments ?? []).filter((c) => !c.resolved).length;
+  const stop = (handler) => (event) => {
+    event.stopPropagation();
+    handler();
+  };
 
   return (
-    <aside
-      className={`comments-panel ${open ? "is-open" : ""}`}
-      aria-label="Comments"
-      aria-hidden={!open}
-    >
-      <header className="comments-panel-header">
-        <h2>Comments</h2>
-        <span className="comments-count">{unresolvedCount} open</span>
-        <button
-          type="button"
-          className="panel-close"
-          onClick={onClose}
-          aria-label="Close comments panel"
-        >
-          ✕
-        </button>
-      </header>
+    <Panel open={open} side="right" label="Comments">
+      <PanelHeader title="Comments" onClose={onClose} closeLabel="Close comments">
+        {unresolvedCount > 0 ? <Badge tone="accent">{unresolvedCount}</Badge> : null}
+      </PanelHeader>
 
-      <label className="comments-filter">
-        <input
-          type="checkbox"
-          checked={showResolved}
-          onChange={(event) => setShowResolved(event.target.checked)}
-        />
-        Show resolved
-      </label>
+      <div className="comments-filter">
+        <Checkbox label="Show resolved" checked={showResolved} onChange={setShowResolved} />
+      </div>
 
-      <div className="comments-list">
-        {visible.length === 0 && (
-          <p className="comments-empty">
-            Select text on a page and choose <strong>💬 Comment</strong> to add a
-            note. Unresolved comments stay neon-highlighted in the manuscript.
-          </p>
-        )}
+      <PanelBody className="comments-list">
+        {visible.length === 0 ? (
+          <EmptyState title={showResolved ? "No comments yet" : "No open comments"}>
+            Select text on the page and choose Comment to leave a note for
+            yourself or an editor.
+          </EmptyState>
+        ) : null}
 
-        {visible.map((comment, index) => (
+        {visible.map((comment) => (
           <article
             key={comment.id}
-            className={`comment-card ${
-              focusedCommentId === comment.id ? "is-focused" : ""
-            } ${comment.resolved ? "is-resolved" : ""}`}
+            className={`comment-card ${focusedCommentId === comment.id ? "is-focused" : ""} ${
+              comment.resolved ? "is-resolved" : ""
+            }`}
             onClick={() => onFocusComment?.(comment)}
           >
-            <header className="comment-card-header">
-              <span className="comment-index">Comment #{index + 1}</span>
-              <span className="comment-chapter">
-                {chapterTitles.get(comment.chapterId) ?? ""}
-              </span>
+            <header className="comment-card__meta">
+              <span>{chapterTitles.get(comment.chapterId) ?? ""}</span>
+              <time>{formatTime(comment.updatedAt)}</time>
             </header>
 
-            <blockquote className="comment-selected">
-              {comment.selectedText || "—"}
-            </blockquote>
+            <blockquote className="comment-card__quote">{comment.selectedText || "—"}</blockquote>
 
             {editingId === comment.id ? (
-              <div className="comment-edit">
-                <textarea
+              <div className="comment-card__edit" onClick={(event) => event.stopPropagation()}>
+                <TextArea
                   value={draftText}
-                  rows={3}
+                  aria-label="Edit comment"
                   onChange={(event) => setDraftText(event.target.value)}
-                  onClick={(event) => event.stopPropagation()}
                 />
-                <div className="comment-actions">
-                  <button
-                    type="button"
-                    className="ghost-btn"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setEditingId(null);
-                    }}
-                  >
+                <div className="comment-card__actions">
+                  <Button size="sm" onClick={() => setEditingId(null)}>
                     Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="primary-btn"
-                    onClick={(event) => {
-                      event.stopPropagation();
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => {
                       onUpdate?.(comment.id, draftText.trim());
                       setEditingId(null);
                     }}
                   >
                     Save
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
-              <p className="comment-text">{comment.text}</p>
+              <p className="comment-card__text">{comment.text}</p>
             )}
 
-            <footer className="comment-card-footer">
-              <span className={`comment-status ${comment.resolved ? "resolved" : ""}`}>
-                {comment.resolved ? "Resolved" : "Unresolved"}
-              </span>
-              <time className="comment-time">{formatTime(comment.updatedAt)}</time>
-            </footer>
-
-            <div className="comment-actions">
-              <button
-                type="button"
-                className="ghost-btn"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setEditingId(comment.id);
-                  setDraftText(comment.text);
-                }}
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                className="ghost-btn"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onResolve?.(comment.id, !comment.resolved);
-                }}
-              >
-                {comment.resolved ? "Reopen" : "Resolve"}
-              </button>
-              <button
-                type="button"
-                className="ghost-btn danger"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onDelete?.(comment.id);
-                }}
-              >
-                Delete
-              </button>
-            </div>
+            {editingId !== comment.id ? (
+              <footer className="comment-card__actions">
+                {comment.resolved ? <span className="comment-card__status">Resolved</span> : null}
+                <Button
+                  size="sm"
+                  onClick={stop(() => {
+                    setEditingId(comment.id);
+                    setDraftText(comment.text);
+                  })}
+                >
+                  Edit
+                </Button>
+                <Button size="sm" onClick={stop(() => onResolve?.(comment.id, !comment.resolved))}>
+                  {comment.resolved ? "Reopen" : "Resolve"}
+                </Button>
+                <Button size="sm" variant="danger" onClick={stop(() => onDelete?.(comment.id))}>
+                  Delete
+                </Button>
+              </footer>
+            ) : null}
           </article>
         ))}
-      </div>
-    </aside>
+      </PanelBody>
+    </Panel>
   );
 }

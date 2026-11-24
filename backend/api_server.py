@@ -6,6 +6,7 @@ import logging
 import os
 
 from flask import Flask, jsonify, request
+from werkzeug.serving import WSGIRequestHandler
 from flask_cors import CORS
 
 from inference_service import SUPPORTED_LANGS, service
@@ -94,5 +95,8 @@ if __name__ == "__main__":
     create_app()
     host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", "8000"))
-    # threaded=False avoids concurrent Fairseq/generator race conditions.
-    app.run(host=host, port=port, debug=False, threaded=False)
+    # Threaded, so one browser connection that opens and never sends a request
+    # (speculative preconnects, an aborted fetch) cannot block every later
+    # request. Model calls are still serialised by the lock in the service.
+    WSGIRequestHandler.timeout = 30  # drop idle sockets instead of waiting forever
+    app.run(host=host, port=port, debug=False, threaded=True)

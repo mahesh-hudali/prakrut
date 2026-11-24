@@ -9,12 +9,23 @@
 
 import { createId } from "./ids.js";
 
+/**
+ * Annotation colours (product blueprint 2.3). `css` points at a theme token so
+ * highlights stay readable on both the light paper and the dark page.
+ * The ids are stored in .kbook files and must never change; "orange" is kept
+ * so older projects still open, but is no longer offered.
+ */
 export const HIGHLIGHT_COLORS = Object.freeze({
-  neonYellow: { id: "neonYellow", label: "Neon Yellow", css: "#F5FF3D" },
-  neonGreen: { id: "neonGreen", label: "Neon Green", css: "#5CFF8F" },
-  blue: { id: "blue", label: "Blue", css: "#9BD8FF" },
-  pink: { id: "pink", label: "Pink", css: "#FFA8D8" },
-  orange: { id: "orange", label: "Orange", css: "#FFC46B" },
+  neonYellow: { id: "neonYellow", label: "Yellow", css: "var(--color-highlight-yellow)" },
+  neonGreen: { id: "neonGreen", label: "Green", css: "var(--color-highlight-green)" },
+  blue: { id: "blue", label: "Blue", css: "var(--color-highlight-blue)" },
+  pink: { id: "pink", label: "Pink", css: "var(--color-highlight-pink)" },
+  orange: {
+    id: "orange",
+    label: "Orange",
+    css: "var(--color-highlight-yellow)",
+    retired: true,
+  },
 });
 
 export const DEFAULT_COMMENT_COLOR = "neonYellow";

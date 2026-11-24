@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // origin breaks under CORS whenever Vite starts on a non-default port.
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 const DEBOUNCE_MS = 150;
+/** A healthy server answers in well under a second; past this it is stuck. */
+const REQUEST_TIMEOUT_MS = 6000;
 const WORD_CHAR = /[A-Za-z]/;
 
 export function getCurrentWord(text, caret) {
@@ -37,8 +39,11 @@ export function useTransliteration() {
   const debounceRef = useRef(null);
   const abortRef = useRef(null);
   const requestIdRef = useRef(0);
+  // The Roman word currently under the caret; suggestions must match it.
+  const currentWordRef = useRef("");
 
   const clearSuggestions = useCallback(() => {
+    currentWordRef.current = "";
     setSuggestions([]);
     setSelectedIndex(0);
     setOpen(false);
@@ -58,6 +63,11 @@ export function useTransliteration() {
       const controller = new AbortController();
       abortRef.current = controller;
       const requestId = ++requestIdRef.current;
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, REQUEST_TIMEOUT_MS);
 
       setLoading(true);
       setError("");
@@ -77,14 +87,21 @@ export function useTransliteration() {
 
         const data = await response.json();
         if (requestId !== requestIdRef.current) return;
+        // The caret has moved to another word since this was asked.
+        if (word !== currentWordRef.current) return;
 
         const result = Array.isArray(data.result) ? data.result : [];
         setSuggestions(result);
         setSelectedIndex(0);
         setOpen(result.length > 0);
       } catch (err) {
-        if (err.name === "AbortError") return;
+        if (err.name === "AbortError" && !timedOut) return;
         if (requestId === requestIdRef.current) {
+          if (timedOut) {
+            setError("Transliteration server is not responding — restart it with: npm run backend");
+            clearSuggestions();
+            return;
+          }
           setError(
             err instanceof TypeError
               ? API_BASE
@@ -95,6 +112,7 @@ export function useTransliteration() {
           clearSuggestions();
         }
       } finally {
+        clearTimeout(timer);
         if (requestId === requestIdRef.current) {
           setLoading(false);
         }
@@ -116,12 +134,20 @@ export function useTransliteration() {
   const syncFromCaret = useCallback(
     (value, caret) => {
       const current = getCurrentWord(value, caret);
+      const previousWord = currentWordRef.current;
+      currentWordRef.current = current.word;
       setWordRange(current);
       if (!current.word) {
         clearSuggestions();
         return;
       }
-      scheduleFetch(current.word);
+      // Suggestions belong to one word: never leave another word's list open
+      // (accepting it would replace the wrong text).
+      if (current.word !== previousWord) {
+        setSuggestions([]);
+        setOpen(false);
+        scheduleFetch(current.word);
+      }
     },
     [clearSuggestions, scheduleFetch]
   );

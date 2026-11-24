@@ -21,7 +21,12 @@ import {
 
 const AUTOSAVE_DEBOUNCE_MS = 1200;
 
+/**
+ * NEW: nothing has been written anywhere yet (untouched new project). The UI
+ * must never call that "saved" (blueprint 1.5).
+ */
 export const SAVE_STATUS = Object.freeze({
+  NEW: "new",
   SAVED: "saved",
   SAVING: "saving",
   UNSAVED: "unsaved",
@@ -33,7 +38,10 @@ export const SAVE_STATUS = Object.freeze({
  * explicit `.kbook` save/open (portable source of truth).
  */
 export function useProject({ doc, setDoc, editorState, restoreUiState }) {
-  const [saveStatus, setSaveStatus] = useState(SAVE_STATUS.SAVED);
+  const [saveStatus, setSaveStatus] = useState(SAVE_STATUS.NEW);
+  // When the work last reached durable storage: this browser (IndexedDB)
+  // and a project file the writer controls. Shown so they can tell the two apart.
+  const [savedAt, setSavedAt] = useState({ browser: null, file: null });
   const [statusMessage, setStatusMessage] = useState("");
   const [currentFilename, setCurrentFilename] = useState(() =>
     buildProjectFilename(doc)
@@ -102,6 +110,7 @@ export function useProject({ doc, setDoc, editorState, restoreUiState }) {
           latestRef.current.editorState
         );
         await saveAutosave(payload);
+        setSavedAt((prev) => ({ ...prev, browser: new Date().toISOString() }));
         setSaveStatus(SAVE_STATUS.SAVED);
         setStatusMessage("");
       } catch (error) {
@@ -179,6 +188,7 @@ export function useProject({ doc, setDoc, editorState, restoreUiState }) {
           projectId: currentDoc.metadata?.id ?? null,
         });
 
+        setSavedAt((prev) => ({ ...prev, file: lastFileSaveRef.current }));
         setSaveStatus(SAVE_STATUS.SAVED);
         setStatusMessage(
           result.method === "download"
@@ -223,6 +233,7 @@ export function useProject({ doc, setDoc, editorState, restoreUiState }) {
       restoreUiState?.(result.editorState);
       fileHandleRef.current = result.handle ?? null;
       setCurrentFilename(result.filename ?? buildProjectFilename(result.doc));
+      setSavedAt({ browser: null, file: new Date().toISOString() });
       setSaveStatus(SAVE_STATUS.SAVED);
       setStatusMessage(
         result.migrationsApplied?.length
@@ -257,7 +268,9 @@ export function useProject({ doc, setDoc, editorState, restoreUiState }) {
   // Warn before losing unsaved work.
   useEffect(() => {
     const handler = (event) => {
-      if (saveStatus === SAVE_STATUS.SAVED) return undefined;
+      if (saveStatus === SAVE_STATUS.SAVED || saveStatus === SAVE_STATUS.NEW) {
+        return undefined;
+      }
       event.preventDefault();
       event.returnValue = "";
       return "";
@@ -268,6 +281,7 @@ export function useProject({ doc, setDoc, editorState, restoreUiState }) {
 
   return {
     saveStatus,
+    savedAt,
     statusMessage,
     setStatusMessage,
     currentFilename,

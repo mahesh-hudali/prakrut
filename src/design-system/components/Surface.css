@@ -1,0 +1,109 @@
+.ds-surface {
+  position: fixed;
+  z-index: var(--z-popover);
+  border-radius: var(--radius-surface);
+  font-family: var(--font-ui);
+  animation: ds-surface-in var(--motion-fast) var(--easing-standard);
+}
+
+@keyframes ds-surface-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+.ds-surface--raised {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--elevation-menu);
+}
+
+.ds-surface--inverse {
+  background: var(--color-inverse);
+  color: var(--color-inverse-text);
+  box-shadow: var(--elevation-menu);
+}
+
+/* Ghost buttons inside the inverse surface use the inverse palette. */
+.ds-surface--inverse .ds-button--ghost {
+  color: var(--color-inverse-text);
+  opacity: 0.85;
+}
+
+.ds-surface--inverse .ds-button--ghost:hover:not(:disabled) {
+  background: var(--color-inverse-hover);
+  color: var(--color-inverse-text);
+  opacity: 1;
+}
+
+.ds-surface--inverse .ds-button--ghost[aria-pressed="true"] {
+  background: var(--color-inverse-hover);
+  color: var(--color-inverse-text);
+  opacity: 1;
+}
+
+.ds-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--statusbar-height) + var(--space-6));
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  width: max-content;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-surface);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--elevation-menu);
+  animation: ds-toast-in var(--motion-slow) var(--easing-standard);
+}
+
+@keyframes ds-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+.ds-toast__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.ds-toast__text strong {
+  font-weight: var(--weight-semibold);
+}
+
+.ds-toast__text span {
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-toast__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+@media (max-width: 520px) {
+  .ds-toast {
+    flex-direction: column;
+    align-items: stretch;
+    width: calc(100vw - 32px);
+  }
+
+  .ds-toast__actions {
+    justify-content: flex-end;
+  }
+}

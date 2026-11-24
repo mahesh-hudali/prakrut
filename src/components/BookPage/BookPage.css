@@ -2,26 +2,15 @@
   position: relative;
   width: var(--page-width);
   height: var(--page-height);
-  /* Warm ivory paper with an almost invisible fibre texture. */
-  background-color: var(--paper, #f8f4ea);
-  background-image:
-    radial-gradient(
-      circle at 22% 18%,
-      rgba(255, 255, 255, 0.5),
-      rgba(255, 255, 255, 0) 55%
-    ),
-    repeating-linear-gradient(
-      101deg,
-      rgba(120, 104, 74, 0.014) 0px,
-      rgba(120, 104, 74, 0.014) 1px,
-      rgba(255, 255, 255, 0) 1px,
-      rgba(255, 255, 255, 0) 3px
-    );
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  background: var(--color-paper);
+  border-radius: var(--radius-page);
+  box-shadow: var(--shadow-page);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  color: var(--ink, #26231f);
+  color: var(--color-page-ink);
+  transition: background-color var(--motion-slow) var(--easing-standard),
+    color var(--motion-slow) var(--easing-standard);
   font-family: var(--font-family);
   font-size: var(--font-size);
   font-weight: var(--font-weight);
@@ -62,7 +51,7 @@
   text-align: center;
   font-size: 0.68em;
   letter-spacing: 0.06em;
-  color: rgba(38, 35, 31, 0.45);
+  color: var(--color-page-ink-muted);
   pointer-events: none;
   font-family: var(--font-family);
 }
@@ -75,7 +64,7 @@
   text-align: center;
   font-size: 0.8em;
   font-variant-numeric: lining-nums;
-  color: rgba(38, 35, 31, 0.5);
+  color: var(--color-page-ink-muted);
   pointer-events: none;
   font-family: var(--font-family);
 }

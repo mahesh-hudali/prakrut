@@ -1,0 +1,239 @@
+/*
+ * Prakrut design tokens — implements docs/product-blueprint.md, Part 2.
+ *
+ * Personality: literary, calm, precise, warm. Paper and ink, one restrained
+ * accent, a quiet canvas around a realistic page.
+ *
+ * Components use only these semantic tokens, never raw hex values, so each
+ * theme is just a different set of values. Theme selection:
+ * <html data-theme="light|dark">; without it the OS preference decides.
+ */
+
+:root {
+  /* ---- Type (2.2) ------------------------------------------------------- */
+  /* UI: Inter for Latin, Noto Sans Kannada for Kannada, system fallback. */
+  --font-ui: "Inter", "Noto Sans Kannada", system-ui, sans-serif;
+  /* Kannada display face for the wordmark and chapter-level headings. */
+  --font-display-kn: "Tiro Kannada", "Noto Serif Kannada", serif;
+  /* Manuscript-flavoured UI text (chapter names, quoted passages). */
+  --font-body-kn: "Noto Serif Kannada", "Source Serif 4", Georgia, serif;
+  --font-body-latin: "Source Serif 4", Georgia, serif;
+
+  --text-xs: 0.75rem;   /* 12px — metadata */
+  --text-sm: 0.8125rem; /* 13px — controls, menus */
+  --text-md: 0.875rem;  /* 14px — panel body */
+  --text-lg: 1rem;      /* 16px — panel titles */
+  --text-xl: 1.25rem;   /* 20px — wordmark */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+
+  /* ---- Space (2.4: 4px grid) --------------------------------------------- */
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ---- Size --------------------------------------------------------------- */
+  --control-sm: 28px;
+  --control-md: 32px;
+  --toolbar-height: 48px;
+  --statusbar-height: 30px;
+  --panel-width: 296px;
+
+  /* ---- Radius (2.4/2.6) --------------------------------------------------- */
+  --radius-control: 4px;
+  --radius-surface: 8px;
+  --radius-dialog: 12px;
+  --radius-page: 2px;
+  --radius-full: 999px;
+
+  /* ---- Motion (2.4/2.6) --------------------------------------------------- */
+  --motion-fast: 120ms;   /* hover, focus */
+  --motion-normal: 180ms; /* popovers, panels */
+  --motion-slow: 220ms;   /* theme and focus-mode transitions */
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---- Layers ------------------------------------------------------------- */
+  --z-panel: 40;
+  --z-toolbar: 50;
+  --z-popover: 60;
+  --z-menu: 70;
+  --z-toast: 80;
+}
+
+/* Fitts's law (1.2): touch targets at least 44×44 CSS px on touch screens. */
+@media (pointer: coarse) {
+  :root {
+    --control-sm: 44px;
+    --control-md: 44px;
+    --toolbar-height: 56px;
+  }
+}
+
+/* ---- Light (2.3) ------------------------------------------------------- */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-canvas: #f3f1eb;
+  --color-canvas-focus: #eeece5;
+  --color-chrome: #f8f7f2;
+  --color-surface: #fffdf8;
+  --color-surface-sunken: #ebe8e0;
+  --color-hover: rgba(37, 37, 34, 0.06);
+  --color-pressed: rgba(37, 37, 34, 0.1);
+
+  --color-text: #252522;
+  --color-text-muted: #686862;
+  /* Placeholders and hints only; still ≥4.5:1 on paper. */
+  --color-text-subtle: #737069;
+  --color-text-on-accent: #ffffff;
+
+  --color-border: #d8d5cc;
+  --color-border-strong: #bfbbb0;
+  /* Outlines that identify a form control: ≥3:1 (WCAG 1.4.11). */
+  --color-border-control: #8a867b;
+
+  --color-accent: #286b66;
+  --color-accent-hover: #1f5652;
+  --color-accent-subtle: #e2efeb;
+  --color-focus-ring: #286b66;
+
+  --color-warning: #8a5a16;
+  --color-danger: #a33a35;
+  --color-success: #286b66;
+
+  --color-paper: #fffdf8;
+  --color-page-ink: #252522;
+  --color-page-ink-muted: #8b8a83;
+  --color-page-placeholder: #a3a19a;
+  --color-page-rule: rgba(37, 37, 34, 0.1);
+  --color-caret: #286b66;
+  --color-selection: rgba(40, 107, 102, 0.2);
+
+  --color-highlight-yellow: #f7e8a5;
+  --color-highlight-green: #d7ead8;
+  --color-highlight-blue: #dce8f5;
+  --color-highlight-pink: #f2dde5;
+  --color-highlight-ink: #252522;
+
+  /* Border-first surfaces; shadows only for floating menus and dialogs. */
+  --shadow-page: 0 1px 2px rgba(37, 37, 34, 0.06), 0 8px 24px -12px rgba(37, 37, 34, 0.18);
+  --elevation-menu: 0 8px 24px -8px rgba(37, 37, 34, 0.2);
+  --elevation-dialog: 0 16px 40px -12px rgba(37, 37, 34, 0.28);
+
+  /* The floating selection bar uses the inverse surface. */
+  --color-inverse: #252522;
+  --color-inverse-text: #f1f0ea;
+  --color-inverse-hover: rgba(241, 240, 234, 0.14);
+}
+
+/* ---- Dark (2.3) -------------------------------------------------------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: #17191c;
+  --color-canvas-focus: #131517;
+  --color-chrome: #1c1f22;
+  --color-surface: #22262b;
+  --color-surface-sunken: #131517;
+  --color-hover: rgba(241, 240, 234, 0.07);
+  --color-pressed: rgba(241, 240, 234, 0.12);
+
+  --color-text: #f1f0ea;
+  --color-text-muted: #b6b7b2;
+  --color-text-subtle: #9c9d98;
+  --color-text-on-accent: #17191c;
+
+  --color-border: #3b4046;
+  --color-border-strong: #4d535a;
+  --color-border-control: #737980;
+
+  --color-accent: #78b9ae;
+  --color-accent-hover: #8fc8be;
+  --color-accent-subtle: #263c39;
+  --color-focus-ring: #78b9ae;
+
+  --color-warning: #e4b65d;
+  --color-danger: #e58a83;
+  --color-success: #78b9ae;
+
+  --color-paper: #22262b;
+  --color-page-ink: #f1f0ea;
+  --color-page-ink-muted: #8d8f8b;
+  --color-page-placeholder: #747771;
+  --color-page-rule: rgba(241, 240, 234, 0.12);
+  --color-caret: #78b9ae;
+  --color-selection: rgba(120, 185, 174, 0.3);
+
+  --color-highlight-yellow: #665a32;
+  --color-highlight-green: #355640;
+  --color-highlight-blue: #354b65;
+  --color-highlight-pink: #654351;
+  --color-highlight-ink: #f1f0ea;
+
+  --shadow-page: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -12px rgba(0, 0, 0, 0.55);
+  --elevation-menu: 0 10px 28px -8px rgba(0, 0, 0, 0.55);
+  --elevation-dialog: 0 18px 44px -12px rgba(0, 0, 0, 0.65);
+
+  --color-inverse: #f1f0ea;
+  --color-inverse-text: #17191c;
+  --color-inverse-hover: rgba(23, 25, 28, 0.1);
+}
+
+/* No explicit choice: follow the operating system (same values as dark). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
+    --color-canvas: #17191c;
+    --color-canvas-focus: #131517;
+    --color-chrome: #1c1f22;
+    --color-surface: #22262b;
+    --color-surface-sunken: #131517;
+    --color-hover: rgba(241, 240, 234, 0.07);
+    --color-pressed: rgba(241, 240, 234, 0.12);
+    --color-text: #f1f0ea;
+    --color-text-muted: #b6b7b2;
+    --color-text-subtle: #9c9d98;
+    --color-text-on-accent: #17191c;
+    --color-border: #3b4046;
+    --color-border-strong: #4d535a;
+    --color-border-control: #737980;
+    --color-accent: #78b9ae;
+    --color-accent-hover: #8fc8be;
+    --color-accent-subtle: #263c39;
+    --color-focus-ring: #78b9ae;
+    --color-warning: #e4b65d;
+    --color-danger: #e58a83;
+    --color-success: #78b9ae;
+    --color-paper: #22262b;
+    --color-page-ink: #f1f0ea;
+    --color-page-ink-muted: #8d8f8b;
+    --color-page-placeholder: #747771;
+    --color-page-rule: rgba(241, 240, 234, 0.12);
+    --color-caret: #78b9ae;
+    --color-selection: rgba(120, 185, 174, 0.3);
+    --color-highlight-yellow: #665a32;
+    --color-highlight-green: #355640;
+    --color-highlight-blue: #354b65;
+    --color-highlight-pink: #654351;
+    --color-highlight-ink: #f1f0ea;
+    --shadow-page: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -12px rgba(0, 0, 0, 0.55);
+    --elevation-menu: 0 10px 28px -8px rgba(0, 0, 0, 0.55);
+    --elevation-dialog: 0 18px 44px -12px rgba(0, 0, 0, 0.65);
+    --color-inverse: #f1f0ea;
+    --color-inverse-text: #17191c;
+    --color-inverse-hover: rgba(23, 25, 28, 0.1);
+  }
+}

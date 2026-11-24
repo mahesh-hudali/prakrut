@@ -52,6 +52,14 @@ async function startServer() {
 }
 
 const server = await startServer();
+// A crash must not leave the preview server running (it blocks the next run).
+for (const event of ["uncaughtException", "unhandledRejection"]) {
+  process.on(event, (error) => {
+    console.error(error);
+    server.kill();
+    process.exit(1);
+  });
+}
 const BASE_URL = `http://localhost:${PORT}/`;
 
 let failures = 0;
@@ -90,6 +98,16 @@ console.log("\n1. The page is a single editing surface");
   check("at most one placeholder on screen", placeholders <= 1, `${placeholders} found`);
 }
 
+console.log("\n1b. Save state is honest");
+{
+  const saveText = () => page.locator(".status-bar__save").textContent();
+  check(
+    "a new, untouched project is not called saved",
+    (await saveText()).includes("Not saved yet"),
+    await saveText()
+  );
+}
+
 console.log("\n2. Typing produces exactly what was typed");
 {
   // A paragraph with real prose: appending to a long paragraph is where the
@@ -113,8 +131,8 @@ console.log("\n2. Typing produces exactly what was typed");
 
   const charCount = () =>
     page
-      .locator(".book-status span", { hasText: "Characters:" })
-      .locator("strong")
+      .locator(".status-bar__count", { hasText: "Characters" })
+      .locator("dd")
       .textContent()
       .then((value) => Number(value.replace(/,/g, "")));
 
@@ -153,13 +171,19 @@ console.log("\n2. Typing produces exactly what was typed");
   for (let i = 0; i < 10; i += 1) await page.keyboard.press("Backspace");
   await page.waitForTimeout(400);
   const restored = await target.textContent();
+  await page.waitForTimeout(1500);
+  const saved = await page.locator(".status-bar__save").textContent();
+  check("after an edit the work is saved locally", /Saved locally|Offline/.test(saved), saved);
+
   check("backspace removes exactly what was typed", restored === before,
     `tail was "${restored.slice(before.length)}"`);
 }
 
 console.log("\n3. Kannada transliteration suggestions");
 {
-  const backendUp = await fetch("http://127.0.0.1:8000/health")
+  const backendUp = await fetch("http://127.0.0.1:8000/health", {
+    signal: AbortSignal.timeout(3000),
+  })
     .then((response) => response.ok)
     .catch(() => false);
 
@@ -184,9 +208,9 @@ console.log("\n3. Kannada transliteration suggestions");
 
     let suggestions = [];
     try {
-      await page.waitForSelector(".xlit-suggestions .xlit-kn", { timeout: 8000 });
+      await page.waitForSelector(".xlit .xlit-kn", { timeout: 8000 });
       suggestions = await page
-        .locator(".xlit-suggestions .xlit-kn")
+        .locator(".xlit .xlit-kn")
         .allTextContents();
     } catch {
       /* reported below */
@@ -211,7 +235,7 @@ console.log("\n4. Enter and Backspace join/split paragraphs");
   // make sure it is dismissed before testing paragraph splitting.
   await page.keyboard.press("Escape");
   await page
-    .locator(".xlit-suggestions")
+    .locator(".xlit")
     .waitFor({ state: "hidden", timeout: 3000 })
     .catch(() => {});
 
@@ -325,10 +349,10 @@ console.log("\n4b. Undo and redo");
 
 console.log("\n5. Menus are visible");
 {
-  const fileTrigger = page.getByRole("button", { name: "File ▾" });
+  const fileTrigger = page.getByRole("button", { name: "File", exact: true });
   check("File button is visible", await fileTrigger.isVisible());
   await fileTrigger.click();
-  const fileMenu = page.locator(".file-dropdown");
+  const fileMenu = page.getByRole("menu", { name: "File" });
   check("File dropdown opens on screen", await fileMenu.isVisible());
   const box = await fileMenu.boundingBox();
   check(
@@ -338,7 +362,7 @@ console.log("\n5. Menus are visible");
   );
   await page.keyboard.press("Escape");
 
-  const exportTrigger = page.getByRole("button", { name: "Export ▾" });
+  const exportTrigger = page.getByRole("button", { name: "Export", exact: true });
   check("Export button is visible", await exportTrigger.isVisible());
 
   const contrast = await exportTrigger.evaluate((el) => {
@@ -352,7 +376,7 @@ console.log("\n5. Menus are visible");
   );
 
   await exportTrigger.click();
-  check("Export dropdown opens on screen", await page.locator(".export-dropdown").isVisible());
+  check("Export dropdown opens on screen", await page.getByRole("menu", { name: "Export document" }).isVisible());
   await page.keyboard.press("Escape");
 }
 
@@ -382,7 +406,7 @@ console.log("\n6. Exports produce files containing the current text");
     ["DOCX", "Export as DOCX"],
     ["PDF", "Export as PDF"],
   ]) {
-    await page.getByRole("button", { name: "Export ▾" }).click();
+    await page.getByRole("button", { name: "Export", exact: true }).click();
     try {
       const [download] = await Promise.all([
         page.waitForEvent("download", { timeout: 60000 }),
@@ -411,6 +435,80 @@ console.log("\n6. Exports produce files containing the current text");
       check(`${label} downloaded`, false, String(error).split("\n")[0]);
     }
   }
+}
+
+console.log("\n6b. Themes");
+{
+  const pageBackground = () =>
+    page.locator(".book-page").first().evaluate((el) => getComputedStyle(el).backgroundColor);
+  const light = await pageBackground();
+
+  await page.getByRole("button", { name: "View", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Dark" }).click();
+  await page.waitForTimeout(450);
+  const dark = await pageBackground();
+  check("dark theme turns the page into a slate", light !== dark, `${light} → ${dark}`);
+  check(
+    "dark theme is remembered",
+    (await page.evaluate(() => localStorage.getItem("prakrut:theme"))) === "dark"
+  );
+
+  await page.getByRole("button", { name: "View", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Light" }).click();
+  await page.waitForTimeout(450);
+  check("light theme restores the paper", (await pageBackground()) === light);
+}
+
+console.log("\n6c. Focus mode");
+{
+  const paragraph = page.locator(".page-content [data-block-id]").filter({ hasText: /.{80,}/ }).first();
+  await paragraph.click();
+  await page.keyboard.press("ControlOrMeta+Shift+f");
+  await page.waitForTimeout(300);
+  await page.keyboard.type("ಅ", { delay: 30 });
+  await page.waitForTimeout(500);
+
+  const toolbarHidden = await page
+    .locator(".app-toolbar")
+    .evaluate((el) => getComputedStyle(el).opacity === "0");
+  check("toolbar steps aside while typing", toolbarHidden);
+
+  const dimmed = await page.evaluate(() => {
+    const others = [...document.querySelectorAll(".page-paragraph:not(.is-active)")];
+    const active = document.querySelector(".page-paragraph.is-active");
+    return (
+      Boolean(active) &&
+      getComputedStyle(active).opacity === "1" &&
+      others.some((el) => Number(getComputedStyle(el).opacity) < 0.5)
+    );
+  });
+  check("only the current paragraph stays in full ink", dimmed);
+
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(300);
+  check(
+    "Escape leaves focus mode",
+    !(await page.locator(".book-editor").evaluate((el) => el.classList.contains("is-focus-mode")))
+  );
+}
+
+console.log("\n6d. Phone width");
+{
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(500);
+  const overflow = await page.evaluate(() => {
+    const stage = document.querySelector(".book-stage");
+    const toolbar = document.querySelector(".app-toolbar__row");
+    return {
+      stage: stage.scrollWidth - stage.clientWidth,
+      toolbar: toolbar.scrollWidth - toolbar.clientWidth,
+    };
+  });
+  check("the page fits the screen width", overflow.stage <= 1, `${overflow.stage}px over`);
+  check("the toolbar fits the screen width", overflow.toolbar <= 1, `${overflow.toolbar}px over`);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.waitForTimeout(300);
 }
 
 console.log("\n7. No runtime errors");

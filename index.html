@@ -4,11 +4,24 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ಕನ್ನಡ Book</title>
+    <title>ಪ್ರಾಕೃತ</title>
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Apply the saved theme before first paint (see design-system/theme).
+      try {
+        var t = localStorage.getItem("prakrut:theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Tiro Kannada is only used for the wordmark, so request just its letters. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=Literata:opsz,wght@7..72,500;7..72,600&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Noto+Serif+Kannada:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Tiro+Kannada&text=%E0%B2%AA%E0%B3%8D%E0%B2%B0%E0%B2%BE%E0%B2%95%E0%B3%83%E0%B2%A4&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Noto+Serif+Kannada:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
   </head>

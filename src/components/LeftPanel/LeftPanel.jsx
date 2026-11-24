@@ -1,17 +1,16 @@
 import { useState } from "react";
+import { Panel, PanelBody, PanelHeader, Tabs } from "../../design-system";
 import ChapterSidebar from "../ChapterSidebar/ChapterSidebar";
 import DocumentSettings from "../DocumentSettings/DocumentSettings";
-import "./LeftPanel.css";
 
 const TABS = [
-  { id: "chapters", label: "Book" },
-  { id: "layout", label: "Layout" },
+  { value: "chapters", label: "Book" },
+  { value: "layout", label: "Layout" },
 ];
 
 /**
- * Sliding drawer holding navigation and advanced settings.
- * Hidden by default so the manuscript owns the workspace; the page geometry
- * never changes when it opens or closes.
+ * The binder: chapters and front matter, plus page layout. Closed by default
+ * so the manuscript owns the screen; the page never moves when it opens.
  */
 export default function LeftPanel({
   open,
@@ -31,35 +30,11 @@ export default function LeftPanel({
   const [tab, setTab] = useState("chapters");
 
   return (
-    <aside
-      className={`left-panel ${open ? "is-open" : ""}`}
-      aria-label="Book navigation and settings"
-      aria-hidden={!open}
-    >
-      <div className="left-panel-scroll">
-        <div className="left-panel-tabs" role="tablist">
-          {TABS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === item.id}
-              className={`left-panel-tab ${tab === item.id ? "is-active" : ""}`}
-              onClick={() => setTab(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-          <button
-            type="button"
-            className="panel-close"
-            onClick={onClose}
-            aria-label="Close panel"
-          >
-            ✕
-          </button>
-        </div>
-
+    <Panel open={open} side="left" label="Book navigation and settings">
+      <PanelHeader onClose={onClose}>
+        <Tabs tabs={TABS} value={tab} onChange={setTab} label="Panel sections" />
+      </PanelHeader>
+      <PanelBody>
         {tab === "chapters" ? (
           <ChapterSidebar
             chapters={chapters}
@@ -73,12 +48,9 @@ export default function LeftPanel({
             onToggleFrontMatter={onToggleFrontMatter}
           />
         ) : (
-          <DocumentSettings
-            settings={settings}
-            onChangeSettings={onChangeSettings}
-          />
+          <DocumentSettings settings={settings} onChangeSettings={onChangeSettings} />
         )}
-      </div>
-    </aside>
+      </PanelBody>
+    </Panel>
   );
 }

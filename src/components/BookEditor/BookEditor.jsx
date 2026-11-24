@@ -14,9 +14,12 @@ import EditorToolbar from "../EditorToolbar/EditorToolbar";
 import LeftPanel from "../LeftPanel/LeftPanel";
 import RecoveryPrompt from "../RecoveryPrompt/RecoveryPrompt";
 import SelectionToolbar from "../SelectionToolbar/SelectionToolbar";
+import StatusBar from "../StatusBar/StatusBar";
 import TransliterationSuggestions from "../TransliterationSuggestions/TransliterationSuggestions";
 import { useComments } from "../../hooks/useComments";
 import { useDocument, usePagination } from "../../hooks/useDocument";
+import { useFitZoom } from "../../hooks/useFitZoom";
+import { useFocusMode } from "../../hooks/useFocusMode";
 import { useHistoryShortcuts } from "../../hooks/useHistoryShortcuts";
 import { SAVE_STATUS, useProject } from "../../hooks/useProject";
 import { useTextSelection } from "../../hooks/useTextSelection";
@@ -46,8 +49,6 @@ const WRITING_MODE_SHORTCUTS = {
   2: "action",
   3: "dialogue",
 };
-
-const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5];
 
 /**
  * Splice a page slice back into its paragraph.
@@ -145,6 +146,7 @@ export default function BookEditor() {
   const [exporting, setExporting] = useState(false);
 
   const caretRestoreRef = useRef(null);
+  const stageRef = useRef(null);
   const exportStatusTimerRef = useRef(null);
   const docRef = useRef(doc);
   const pagesRef = useRef(pages);
@@ -771,12 +773,26 @@ export default function BookEditor() {
   }, [focusedCommentId, pages, decorationsKey]);
 
   // ---- Keyboard shortcuts -------------------------------------------------
-  const { saveProject } = project;
+  const { saveProject, openProject } = project;
+  const { chromeVisible } = useFocusMode({ enabled: ui.focusMode, stageRef });
+  const effectiveZoom = useFitZoom(stageRef, doc.settings.pageWidth, ui.zoom);
 
   useEffect(() => {
     const onKeyDown = (event) => {
+      // Escape leaves focus mode once nothing else (suggestions, menus) used it.
+      if (event.key === "Escape" && ui.focusMode && !event.defaultPrevented) {
+        toggleFocusMode();
+        return;
+      }
+
       const mod = event.metaKey || event.ctrlKey;
       if (!mod) return;
+
+      if (!event.shiftKey && event.key.toLowerCase() === "o") {
+        event.preventDefault();
+        openProject();
+        return;
+      }
 
       if (event.shiftKey && event.key.toLowerCase() === "b") {
         event.preventDefault();
@@ -804,7 +820,7 @@ export default function BookEditor() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [applyParagraphStyle, saveProject, toggleFocusMode, toggleLeftPanel]);
+  }, [applyParagraphStyle, openProject, saveProject, toggleFocusMode, toggleLeftPanel, ui.focusMode]);
 
   // ---- Export -------------------------------------------------------------
   const flashExportStatus = useCallback((message, persistMs = 3500) => {
@@ -884,6 +900,7 @@ export default function BookEditor() {
   const handleNewProject = useCallback(() => {
     const confirmed =
       project.saveStatus === SAVE_STATUS.SAVED ||
+      project.saveStatus === SAVE_STATUS.NEW ||
       window.confirm(
         "Start a new project? Unsaved changes remain recoverable from autosave."
       );
@@ -892,13 +909,6 @@ export default function BookEditor() {
     setActiveBlock(null);
     setFocusedCommentId(null);
   }, [project]);
-
-  const saveStatusLabel = {
-    [SAVE_STATUS.SAVED]: "Saved ✓",
-    [SAVE_STATUS.SAVING]: "Saving…",
-    [SAVE_STATUS.UNSAVED]: "Unsaved changes",
-    [SAVE_STATUS.ERROR]: "Save error",
-  }[project.saveStatus];
 
   const chapterTitleById = useMemo(() => {
     const map = new Map();
@@ -912,11 +922,16 @@ export default function BookEditor() {
 
   return (
     <div
-      className={`book-editor ${ui.focusMode ? "is-focus-mode" : ""}`}
+      className={[
+        "book-editor",
+        ui.focusMode ? "is-focus-mode" : "",
+        ui.focusMode && chromeVisible ? "is-chrome-visible" : "",
+        activeBlock ? "has-active-paragraph" : "",
+      ].join(" ")}
       data-zoom={ui.zoom}
     >
+      {ui.focusMode ? <div className="focus-reveal" aria-hidden="true" /> : null}
       <EditorToolbar
-        compact={ui.focusMode}
         leftPanelOpen={ui.leftPanelOpen}
         onToggleLeftPanel={toggleLeftPanel}
         title={doc.metadata.title}
@@ -927,14 +942,11 @@ export default function BookEditor() {
         onAlignChange={onAlignChange}
         typography={doc.settings.typography}
         onTypographyChange={onTypographyChange}
-        canComment={Boolean(selection)}
-        onComment={startComment}
         commentsOpen={ui.commentsPanelOpen}
         unresolvedComments={commentsApi.stats.unresolved}
         onToggleComments={toggleCommentsPanel}
         focusMode={ui.focusMode}
         onToggleFocusMode={toggleFocusMode}
-        saveStatusLabel={saveStatusLabel}
         filename={project.currentFilename}
         canUndo={history.canUndo}
         canRedo={history.canRedo}
@@ -965,13 +977,14 @@ export default function BookEditor() {
           onClose={toggleLeftPanel}
         />
 
-        <main className="book-stage" style={cssVars}>
+        <main className="book-stage" style={cssVars} ref={stageRef}>
           <div
             className="book-stack"
             style={{
-              // Zoom is purely visual — pagination and page geometry are untouched.
-              transform: `scale(${ui.zoom})`,
-              transformOrigin: "top center",
+              // CSS zoom (not transform) so the scaled pages also take up
+              // scaled space: no sideways scrolling on small screens.
+              // Pagination measures off-screen, so it is unaffected.
+              zoom: effectiveZoom,
             }}
           >
             {renderedPages.map((page, index) => (
@@ -1012,45 +1025,20 @@ export default function BookEditor() {
         />
       </div>
 
-      <footer className="book-status">
-        <span>
-          Pages: <strong>{pageCount}</strong>
-          {isPaginating ? " · updating…" : ""}
-        </span>
-        <span>
-          Words: <strong>{stats.words.toLocaleString()}</strong>
-        </span>
-        <span>
-          Characters: <strong>{stats.characters.toLocaleString()}</strong>
-        </span>
-
-        <label className="book-status-zoom">
-          Zoom
-          <select
-            value={ui.zoom}
-            onChange={(event) => setZoom(Number(event.target.value))}
-            aria-label="Zoom level"
-          >
-            {ZOOM_LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {Math.round(level * 100)}%
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <span className="book-status-hint">
-          {exportStatus ||
-            project.statusMessage ||
-            (xlit.loading
-              ? "Transliterating…"
-              : xlit.error
-                ? xlit.error
-                : xlit.open
-                  ? "↑↓ select · Enter accept · Space accept+continue · Esc"
-                  : "⌘Z undo · ⌘⇧B panel · ⌘⇧F focus · ⌘1 character · ⌘2 action · ⌘3 dialogue")}
-        </span>
-      </footer>
+      <StatusBar
+        saveStatus={project.saveStatus}
+        savedAt={project.savedAt}
+        pageCount={pageCount}
+        isPaginating={isPaginating}
+        stats={stats}
+        zoom={ui.zoom}
+        onZoomChange={setZoom}
+        message={
+          exportStatus ||
+          project.statusMessage ||
+          (xlit.loading ? "Transliterating…" : xlit.error || "")
+        }
+      />
 
       <SelectionToolbar
         selection={commentDraft ? null : selection}

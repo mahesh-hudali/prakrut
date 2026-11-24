@@ -1,249 +1,198 @@
 import {
-  BLOCK_STYLES,
-  KANNADA_FONTS,
-  PAGE_PRESETS,
-} from "../../models/documentModel";
-import "./DocumentSettings.css";
+  Field,
+  FieldRow,
+  NumberInput,
+  PanelSection,
+  SegmentedControl,
+  Select,
+} from "../../design-system";
+import { KANNADA_FONTS, PAGE_PRESETS } from "../../models/documentModel";
 
-function NumberField({ label, value, min = 0, max = 5, step = 0.05, onChange, suffix = '"' }) {
-  return (
-    <label className="settings-field">
-      <span>{label}</span>
-      <span className="settings-field-input">
-        <input
-          type="number"
-          value={value}
-          min={min}
-          max={max}
-          step={step}
-          onChange={(e) => onChange(Number(e.target.value))}
-        />
-        <em>{suffix}</em>
-      </span>
-    </label>
-  );
-}
+const WEIGHTS = [
+  { value: 400, label: "Regular" },
+  { value: 500, label: "Medium" },
+  { value: 600, label: "Semibold" },
+  { value: 700, label: "Bold" },
+];
 
+const ALIGNMENTS = [
+  { value: "left", label: "Align left", icon: "alignLeft" },
+  { value: "center", label: "Center", icon: "alignCenter" },
+  { value: "right", label: "Align right", icon: "alignRight" },
+  { value: "justify", label: "Justify", icon: "alignJustify" },
+];
+
+/** Page size, margins and body typography for the whole book. */
 export default function DocumentSettings({ settings, onChangeSettings }) {
-  const preset = PAGE_PRESETS[settings.pageSizeId] ?? PAGE_PRESETS.custom;
-  const isCustom = settings.pageSizeId === "custom";
-
-  const patch = (partial) => {
-    onChangeSettings({ ...settings, ...partial });
-  };
-
-  const patchMargins = (partial) => {
-    onChangeSettings({
-      ...settings,
-      margins: { ...settings.margins, ...partial },
-    });
-  };
-
-  const patchTypography = (partial) => {
-    onChangeSettings({
-      ...settings,
-      typography: { ...settings.typography, ...partial },
-    });
-  };
+  const patch = (partial) => onChangeSettings({ ...settings, ...partial });
+  const patchMargins = (partial) =>
+    onChangeSettings({ ...settings, margins: { ...settings.margins, ...partial } });
+  const patchTypography = (partial) =>
+    onChangeSettings({ ...settings, typography: { ...settings.typography, ...partial } });
 
   const onPresetChange = (id) => {
     const next = PAGE_PRESETS[id];
     if (!next) return;
-    patch({
-      pageSizeId: id,
-      pageWidth: next.width,
-      pageHeight: next.height,
-    });
+    patch({ pageSizeId: id, pageWidth: next.width, pageHeight: next.height });
   };
 
+  const typo = settings.typography;
+
   return (
-    <aside className="document-settings" aria-label="Page and typography settings">
-      <section>
-        <h2>Page size</h2>
-        <label className="settings-field">
-          <span>Preset</span>
-          <select
+    <>
+      <PanelSection title="Page">
+        <Field label="Trim size">
+          <Select
             value={settings.pageSizeId}
-            onChange={(e) => onPresetChange(e.target.value)}
-          >
-            {Object.values(PAGE_PRESETS).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="settings-row">
-          <NumberField
-            label="Width"
-            value={settings.pageWidth}
-            min={3}
-            max={12}
-            onChange={(pageWidth) =>
-              patch({ pageSizeId: "custom", pageWidth })
-            }
+            onChange={(event) => onPresetChange(event.target.value)}
+            options={Object.values(PAGE_PRESETS).map((p) => ({ value: p.id, label: p.label }))}
           />
-          <NumberField
-            label="Height"
-            value={settings.pageHeight}
-            min={4}
-            max={16}
-            onChange={(pageHeight) =>
-              patch({ pageSizeId: "custom", pageHeight })
-            }
-          />
-        </div>
-        {!isCustom && (
-          <p className="settings-hint">
-            {preset.label}: {preset.width}" × {preset.height}"
-          </p>
-        )}
-      </section>
+        </Field>
+        <FieldRow>
+          <Field label="Width">
+            <NumberInput
+              suffix="in"
+              value={settings.pageWidth}
+              min={3}
+              max={12}
+              step={0.05}
+              onChange={(pageWidth) => patch({ pageSizeId: "custom", pageWidth })}
+            />
+          </Field>
+          <Field label="Height">
+            <NumberInput
+              suffix="in"
+              value={settings.pageHeight}
+              min={4}
+              max={16}
+              step={0.05}
+              onChange={(pageHeight) => patch({ pageSizeId: "custom", pageHeight })}
+            />
+          </Field>
+        </FieldRow>
+      </PanelSection>
 
-      <section>
-        <h2>Margins</h2>
-        <div className="settings-row">
-          <NumberField
-            label="Top"
-            value={settings.margins.top}
-            onChange={(top) => patchMargins({ top })}
-          />
-          <NumberField
-            label="Bottom"
-            value={settings.margins.bottom}
-            onChange={(bottom) => patchMargins({ bottom })}
-          />
-        </div>
-        <div className="settings-row">
-          <NumberField
-            label="Left"
-            value={settings.margins.left}
-            onChange={(left) => patchMargins({ left })}
-          />
-          <NumberField
-            label="Right"
-            value={settings.margins.right}
-            onChange={(right) => patchMargins({ right })}
-          />
-        </div>
-        <NumberField
-          label="Gutter"
-          value={settings.margins.gutter}
-          onChange={(gutter) => patchMargins({ gutter })}
-        />
-      </section>
-
-      <section>
-        <h2>Typography</h2>
-        <label className="settings-field">
-          <span>Font</span>
-          <select
-            value={settings.typography.fontFamilyId}
-            onChange={(e) => patchTypography({ fontFamilyId: e.target.value })}
-          >
-            {KANNADA_FONTS.map((font) => (
-              <option key={font.id} value={font.id}>
-                {font.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="settings-row">
-          <NumberField
-            label="Size"
-            value={settings.typography.fontSizePt}
-            min={8}
-            max={36}
-            step={0.5}
-            suffix="pt"
-            onChange={(fontSizePt) => patchTypography({ fontSizePt })}
-          />
-          <label className="settings-field">
-            <span>Weight</span>
-            <select
-              value={settings.typography.fontWeight}
-              onChange={(e) =>
-                patchTypography({ fontWeight: Number(e.target.value) })
-              }
-            >
-              <option value={400}>Regular</option>
-              <option value={500}>Medium</option>
-              <option value={600}>Semibold</option>
-              <option value={700}>Bold</option>
-            </select>
-          </label>
-        </div>
-        <div className="settings-row">
-          <NumberField
-            label="Line height"
-            value={settings.typography.lineHeight}
-            min={1}
-            max={2.5}
-            step={0.05}
-            suffix=""
-            onChange={(lineHeight) => patchTypography({ lineHeight })}
-          />
-          <NumberField
-            label="Letter"
-            value={settings.typography.letterSpacingEm}
-            min={-0.05}
-            max={0.2}
-            step={0.01}
-            suffix="em"
-            onChange={(letterSpacingEm) =>
-              patchTypography({ letterSpacingEm })
-            }
-          />
-        </div>
-        <div className="settings-row">
-          <NumberField
-            label="Paragraph"
-            value={settings.typography.paragraphSpacingEm}
+      <PanelSection title="Margins">
+        <FieldRow>
+          {["top", "bottom"].map((side) => (
+            <Field key={side} label={side === "top" ? "Top" : "Bottom"}>
+              <NumberInput
+                suffix="in"
+                value={settings.margins[side]}
+                min={0}
+                max={5}
+                step={0.05}
+                onChange={(value) => patchMargins({ [side]: value })}
+              />
+            </Field>
+          ))}
+        </FieldRow>
+        <FieldRow>
+          {["left", "right"].map((side) => (
+            <Field key={side} label={side === "left" ? "Inside" : "Outside"}>
+              <NumberInput
+                suffix="in"
+                value={settings.margins[side]}
+                min={0}
+                max={5}
+                step={0.05}
+                onChange={(value) => patchMargins({ [side]: value })}
+              />
+            </Field>
+          ))}
+        </FieldRow>
+        <Field label="Gutter" hint="Extra space on the binding edge">
+          <NumberInput
+            suffix="in"
+            value={settings.margins.gutter}
             min={0}
             max={2}
             step={0.05}
-            suffix="em"
-            onChange={(paragraphSpacingEm) =>
-              patchTypography({ paragraphSpacingEm })
-            }
+            onChange={(gutter) => patchMargins({ gutter })}
           />
-          <NumberField
-            label="First line"
-            value={settings.typography.firstLineIndentEm}
-            min={0}
-            max={4}
-            step={0.1}
-            suffix="em"
-            onChange={(firstLineIndentEm) =>
-              patchTypography({ firstLineIndentEm })
-            }
-          />
-        </div>
-        <label className="settings-field">
-          <span>Alignment</span>
-          <select
-            value={settings.typography.textAlign}
-            onChange={(e) => patchTypography({ textAlign: e.target.value })}
-          >
-            <option value="left">Left</option>
-            <option value="center">Center</option>
-            <option value="right">Right</option>
-            <option value="justify">Justify</option>
-          </select>
-        </label>
-      </section>
+        </Field>
+      </PanelSection>
 
-      <section>
-        <h2>Paragraph style</h2>
-        <p className="settings-hint">
-          Applied to the focused paragraph via the toolbar.
-        </p>
-        <ul className="style-legend">
-          {Object.values(BLOCK_STYLES).map((style) => (
-            <li key={style.id}>{style.label}</li>
-          ))}
-        </ul>
-      </section>
-    </aside>
+      <PanelSection title="Body text">
+        <Field label="Font">
+          <Select
+            value={typo.fontFamilyId}
+            onChange={(event) => patchTypography({ fontFamilyId: event.target.value })}
+            options={KANNADA_FONTS.map((font) => ({ value: font.id, label: font.label }))}
+          />
+        </Field>
+        <FieldRow>
+          <Field label="Size">
+            <NumberInput
+              suffix="pt"
+              value={typo.fontSizePt}
+              min={8}
+              max={36}
+              step={0.5}
+              onChange={(fontSizePt) => patchTypography({ fontSizePt })}
+            />
+          </Field>
+          <Field label="Weight">
+            <Select
+              value={typo.fontWeight}
+              onChange={(event) => patchTypography({ fontWeight: Number(event.target.value) })}
+              options={WEIGHTS}
+            />
+          </Field>
+        </FieldRow>
+        <FieldRow>
+          <Field label="Line height">
+            <NumberInput
+              value={typo.lineHeight}
+              min={1}
+              max={2.5}
+              step={0.05}
+              onChange={(lineHeight) => patchTypography({ lineHeight })}
+            />
+          </Field>
+          <Field label="Letter spacing">
+            <NumberInput
+              suffix="em"
+              value={typo.letterSpacingEm}
+              min={-0.05}
+              max={0.2}
+              step={0.01}
+              onChange={(letterSpacingEm) => patchTypography({ letterSpacingEm })}
+            />
+          </Field>
+        </FieldRow>
+        <FieldRow>
+          <Field label="Paragraph gap">
+            <NumberInput
+              suffix="em"
+              value={typo.paragraphSpacingEm}
+              min={0}
+              max={2}
+              step={0.05}
+              onChange={(paragraphSpacingEm) => patchTypography({ paragraphSpacingEm })}
+            />
+          </Field>
+          <Field label="First-line indent">
+            <NumberInput
+              suffix="em"
+              value={typo.firstLineIndentEm}
+              min={0}
+              max={4}
+              step={0.1}
+              onChange={(firstLineIndentEm) => patchTypography({ firstLineIndentEm })}
+            />
+          </Field>
+        </FieldRow>
+        <Field label="Default alignment" group>
+          <SegmentedControl
+            label="Default alignment"
+            iconOnly
+            options={ALIGNMENTS}
+            value={typo.textAlign}
+            onChange={(textAlign) => patchTypography({ textAlign })}
+          />
+        </Field>
+      </PanelSection>
+    </>
   );
 }

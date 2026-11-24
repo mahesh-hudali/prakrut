@@ -1,18 +1,15 @@
 /*
- * Kindle / physical-paper workspace.
- * Warm, low-contrast chrome so the manuscript page is the brightest thing
- * on screen — no dashboard cards, no bright white, minimal borders.
+ * The writing room: chrome on the edges, the page in the middle of a quiet
+ * desk. The page is always the brightest (light) or most defined (dark)
+ * surface on screen.
  */
 .book-editor {
-  --paper: #f8f4ea;
-  --workspace: #e7e2d8;
-  --ink: #26231f;
-
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100svh;
-  background: var(--workspace);
-  color: var(--ink);
+  background: var(--color-canvas);
+  color: var(--color-text);
 }
 
 .book-editor-body {
@@ -25,116 +22,108 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 2.25rem 1.5rem 3.5rem;
-  background: var(--workspace);
-  /* Barely-there vignette keeps the page feeling lit from above. */
-  background-image: radial-gradient(
-    ellipse at 50% 0%,
-    rgba(255, 255, 255, 0.55),
-    rgba(255, 255, 255, 0) 60%
-  );
+  padding: var(--space-10) var(--space-6) var(--space-10);
+  background: var(--color-canvas);
+  transition: background-color var(--motion-slow) var(--easing-standard);
 }
 
 /*
- * Pages stay centered and keep their physical size regardless of how many
- * panels are open, so closing a drawer never reflows the book.
+ * Pages stay centred and keep their physical size whatever panels are open,
+ * so opening a drawer never reflows the book.
  */
 .book-stack {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.9rem;
+  gap: var(--space-8);
   width: max-content;
-  margin: 0 auto;
   min-width: 100%;
+  margin: 0 auto;
 }
 
-.book-status {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem 1.15rem;
-  align-items: center;
-  padding: 0.45rem 0.9rem;
-  background: #ece6da;
-  border-top: 1px solid #ddd5c5;
-  font-size: 0.8rem;
-  color: #6a6256;
-}
-
-.book-status strong {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.book-status-zoom {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.book-status-zoom select {
-  border: 1px solid #d5cbb6;
-  background: #fffdf7;
-  border-radius: 4px;
-  font: inherit;
-  font-size: 0.78rem;
-  padding: 0.1rem 0.25rem;
-}
-
-.book-status-hint {
-  margin-left: auto;
-  color: #7d7466;
-}
-
-/* Focus mode: chrome recedes, the book keeps its exact dimensions. */
+/* ---- Focus mode ---------------------------------------------------------
+ * Chrome slides away while writing and returns on mouse movement; the
+ * paragraph being written stays in full ink, the rest recede.
+ */
 .book-editor.is-focus-mode .book-stage {
-  padding-top: 3rem;
-  background-image: none;
+  background: var(--color-canvas-focus);
+  /* Room above and below so typewriter scrolling can centre any line. */
+  padding-top: 30vh;
+  padding-bottom: 50vh;
 }
 
-.book-editor.is-focus-mode .book-status {
-  opacity: 0.35;
-  transition: opacity 180ms ease;
+.book-editor.is-focus-mode .app-toolbar,
+.book-editor.is-focus-mode .status-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  transition:
+    transform var(--motion-slow) var(--easing-standard),
+    opacity var(--motion-slow) var(--easing-standard);
 }
 
-.book-editor.is-focus-mode .book-status:hover {
-  opacity: 1;
+.book-editor.is-focus-mode .app-toolbar {
+  top: 0;
+}
+
+.book-editor.is-focus-mode .status-bar {
+  bottom: 0;
+}
+
+.book-editor.is-focus-mode:not(.is-chrome-visible) .focus-reveal:not(:hover) + .app-toolbar:not(:hover):not(:focus-within) {
+  transform: translateY(-100%);
+  opacity: 0;
+}
+
+/* A save problem is never hidden, even while writing. */
+.book-editor.is-focus-mode:not(.is-chrome-visible)
+  .status-bar:not(:hover):not(:focus-within):not(.needs-attention) {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+/* A thin strip at the top edge brings the toolbar back on hover. */
+.focus-reveal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  z-index: calc(var(--z-toolbar) - 1);
+}
+
+.book-editor.is-focus-mode .page-paragraph {
+  transition: opacity var(--motion-slow) var(--easing-standard);
+}
+
+.book-editor.is-focus-mode.has-active-paragraph .page-paragraph:not(.is-active) {
+  opacity: 0.28;
+}
+
+.book-editor.is-focus-mode .book-page {
+  box-shadow: none;
+}
+
+.book-editor.is-focus-mode .book-page-header,
+.book-editor.is-focus-mode .book-page-number {
+  opacity: 0;
 }
 
 @media (max-width: 700px) {
   .book-stage {
-    padding: 1.25rem 0.75rem 2.5rem;
-  }
-
-  .book-status-hint {
-    margin-left: 0;
-    width: 100%;
+    padding: var(--space-4) var(--space-3) var(--space-8);
   }
 }
 
 @media print {
-  .editor-toolbar,
-  .left-panel,
-  .comments-panel,
-  .document-settings,
-  .book-status,
-  .xlit-suggestions,
-  .selection-toolbar,
-  .comment-composer,
-  .recovery-prompt,
-  .export-menu,
-  .export-dropdown {
-    display: none !important;
-  }
-
   .book-editor,
   .book-editor-body,
   .book-stage {
-    background: white !important;
+    height: auto !important;
+    min-height: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
-    min-height: 0 !important;
-    height: auto !important;
+    background: white !important;
   }
 
   .book-stack {
@@ -143,9 +132,8 @@
   }
 
   .book-page {
-    box-shadow: none !important;
-    border: 0 !important;
     break-after: page;
     page-break-after: always;
+    border-radius: 0;
   }
 }

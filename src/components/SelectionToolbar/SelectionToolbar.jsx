@@ -1,13 +1,19 @@
+import { Button, Surface } from "../../design-system";
 import { HIGHLIGHT_COLORS } from "../../models/annotations";
 import "./SelectionToolbar.css";
 
-const TOOLBAR_WIDTH = 300;
+const TOOLBAR_WIDTH = 304;
 const TOOLBAR_HEIGHT = 40;
 
+const MARKS = [
+  ["bold", "B", "Bold"],
+  ["italic", "I", "Italic"],
+  ["underline", "U", "Underline"],
+];
+
 /**
- * Floating toolbar shown while text is selected.
- * Every button uses onMouseDown+preventDefault so the DOM selection survives
- * the click and the action still knows what the user picked.
+ * Floating toolbar over selected text. Every control prevents mousedown so
+ * the DOM selection survives the click and the action knows what was picked.
  */
 export default function SelectionToolbar({
   selection,
@@ -33,27 +39,22 @@ export default function SelectionToolbar({
   };
 
   return (
-    <div
+    <Surface
+      tone="inverse"
       className="selection-toolbar"
       style={{ top, left, width: TOOLBAR_WIDTH }}
       role="toolbar"
       aria-label="Text formatting"
       onMouseDown={hold}
     >
-      {[
-        ["bold", "B", "Bold"],
-        ["italic", "I", "Italic"],
-        ["underline", "U", "Underline"],
-      ].map(([type, glyph, label]) => (
-        <button
+      {MARKS.map(([type, glyph, label]) => (
+        <Button
           key={type}
-          type="button"
-          title={label}
+          size="sm"
+          className={`selection-toolbar__mark mark-${type}`}
           aria-label={label}
-          aria-pressed={activeMarks.includes(type)}
-          className={`selection-btn mark-${type} ${
-            activeMarks.includes(type) ? "is-active" : ""
-          }`}
+          title={label}
+          pressed={activeMarks.includes(type)}
           onMouseDown={hold}
           onClick={() => {
             onToggleMark?.(type);
@@ -61,20 +62,22 @@ export default function SelectionToolbar({
           }}
         >
           {glyph}
-        </button>
+        </Button>
       ))}
 
-      <span className="selection-divider" aria-hidden="true" />
+      <span className="selection-toolbar__divider" aria-hidden="true" />
 
-      <span className="selection-swatches">
-        {Object.values(HIGHLIGHT_COLORS).map((color) => (
+      <span className="selection-toolbar__swatches" role="group" aria-label="Highlight">
+        {Object.values(HIGHLIGHT_COLORS)
+          .filter((color) => !color.retired)
+          .map((color) => (
           <button
             key={color.id}
             type="button"
-            title={`Highlight ${color.label}`}
-            aria-label={`Highlight ${color.label}`}
-            className="selection-swatch"
-            style={{ background: color.css }}
+            title={`Highlight ${color.label.toLowerCase()}`}
+            aria-label={`Highlight ${color.label.toLowerCase()}`}
+            className="selection-toolbar__swatch"
+            style={{ "--swatch": color.css }}
             onMouseDown={hold}
             onClick={() => {
               onHighlight?.(color.id);
@@ -84,17 +87,11 @@ export default function SelectionToolbar({
         ))}
       </span>
 
-      <span className="selection-divider" aria-hidden="true" />
+      <span className="selection-toolbar__divider" aria-hidden="true" />
 
-      <button
-        type="button"
-        className="selection-btn selection-comment"
-        title="Add comment"
-        onMouseDown={hold}
-        onClick={() => onComment?.()}
-      >
-        💬 Comment
-      </button>
-    </div>
+      <Button size="sm" icon="commentAdd" onMouseDown={hold} onClick={() => onComment?.()}>
+        Comment
+      </Button>
+    </Surface>
   );
 }

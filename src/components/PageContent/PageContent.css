@@ -3,7 +3,7 @@
   min-height: 0;
   height: 100%;
   outline: none;
-  caret-color: #26231f;
+  caret-color: var(--color-caret);
 }
 
 .page-paragraph {
@@ -22,7 +22,7 @@
  */
 .page-paragraph[data-placeholder]::before {
   content: attr(data-placeholder);
-  color: #b5ac99;
+  color: var(--color-page-placeholder);
   pointer-events: none;
   position: absolute;
 }
@@ -46,7 +46,7 @@
 }
 
 .page-paragraph.style-dialogue {
-  border-left: 1px solid rgba(38, 35, 31, 0.08);
+  border-left: 1px solid var(--color-page-rule);
 }
 
 /* Inline marks */
@@ -64,28 +64,26 @@
 }
 
 /*
- * Permanent comment highlight.
- * Unresolved comments stay neon so they are impossible to miss; resolved ones
- * fall back to a muted trace that does not compete with the text.
+ * Comment highlight. Unresolved comments keep a soft annotation colour (a
+ * theme token, readable on light and dark pages); resolved ones fall back to
+ * a dotted trace that does not compete with the text.
  */
 .comment-mark.is-unresolved {
-  background: var(--comment-highlight, #f5ff3d);
-  box-shadow: 0 0 0 1px rgba(190, 205, 0, 0.45),
-    0 0 6px rgba(226, 255, 0, 0.55);
+  background: var(--comment-highlight, var(--color-highlight-yellow));
   border-radius: 2px;
   padding: 0 0.05em;
   cursor: pointer;
-  color: #1d1a15;
+  color: var(--color-highlight-ink);
 }
 
 .comment-mark.is-resolved {
   background: transparent;
-  border-bottom: 1px dotted rgba(38, 35, 31, 0.35);
+  border-bottom: 1px dotted var(--color-page-ink-muted);
   cursor: pointer;
 }
 
 .comment-mark.is-focused {
-  outline: 2px solid rgba(15, 92, 76, 0.55);
+  outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
 

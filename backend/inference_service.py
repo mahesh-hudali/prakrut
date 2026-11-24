@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import threading
 import os
 import re
 from typing import List, Optional
@@ -51,6 +52,8 @@ class TransliterationService:
         self.beam = beam
         self.nbest = nbest
         self._model: Optional[Model] = None
+        # Fairseq's generator is not thread-safe: one word at a time.
+        self._lock = threading.Lock()
 
     def load(self) -> None:
         if self._model is not None:
@@ -85,7 +88,7 @@ class TransliterationService:
             raise ValueError("Only a single Roman/English alphabetic word is supported.")
 
         buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
+        with self._lock, contextlib.redirect_stdout(buf):
             result = self._model.translate_word(word, lang, rescore=rescore)
 
         if not result:

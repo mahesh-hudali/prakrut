@@ -1,30 +1,54 @@
+import {
+  Button,
+  IconButton,
+  MenuButton,
+  MenuItem,
+  MenuLabel,
+  MenuSeparator,
+  SegmentedControl,
+  Select,
+  Toolbar,
+  ToolbarDivider,
+  ToolbarGroup,
+  ToolbarSpacer,
+  Wordmark,
+  useTheme,
+} from "../../design-system";
 import { BLOCK_STYLES, KANNADA_FONTS } from "../../models/documentModel";
 import ExportMenu from "../ExportMenu/ExportMenu";
 import FileMenu from "../FileMenu/FileMenu";
 import "./EditorToolbar.css";
 
-const WRITING_MODES = Object.values(BLOCK_STYLES).filter(
-  (style) => style.group === "writing"
-);
-const STRUCTURE_STYLES = Object.values(BLOCK_STYLES).filter(
-  (style) => style.group === "structure"
-);
+const SHORTCUTS = { normal: "⌘0", character: "⌘1", action: "⌘2", dialogue: "⌘3" };
 
-const MODE_SHORTCUTS = {
-  normal: "⌘0",
-  character: "⌘1",
-  action: "⌘2",
-  dialogue: "⌘3",
-};
+const WRITING_MODES = Object.values(BLOCK_STYLES)
+  .filter((style) => style.group === "writing")
+  .map((style) => ({ value: style.id, label: style.label, shortcut: SHORTCUTS[style.id] }));
 
-const FONT_SIZES = [9, 9.5, 10, 10.5, 11, 11.5, 12, 13, 14, 16];
+const STRUCTURE_STYLES = Object.values(BLOCK_STYLES)
+  .filter((style) => style.group === "structure")
+  .map((style) => ({ value: style.id, label: style.label }));
+
+const ALIGNMENTS = [
+  { value: "left", label: "Align left" },
+  { value: "center", label: "Center" },
+  { value: "right", label: "Align right" },
+  { value: "justify", label: "Justify" },
+];
+
+const FONT_SIZES = [11, 11.5, 12, 12.5, 13, 14];
+const THEMES = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "Match system" },
+];
 
 /**
- * Compact primary toolbar.
- * Everything advanced lives in the left drawer or the File menu.
+ * Primary toolbar, kept to seven high-frequency groups (blueprint 1.2,
+ * Hick's law): File · Undo/Redo · Paragraph style · Format · Focus · View ·
+ * Export. Everything else is one click away inside a labelled menu.
  */
 export default function EditorToolbar({
-  compact = false,
   leftPanelOpen,
   onToggleLeftPanel,
   title,
@@ -35,14 +59,11 @@ export default function EditorToolbar({
   onAlignChange,
   typography,
   onTypographyChange,
-  canComment = false,
-  onComment,
   commentsOpen,
   unresolvedComments = 0,
   onToggleComments,
   focusMode,
   onToggleFocusMode,
-  saveStatusLabel,
   filename,
   canUndo = false,
   canRedo = false,
@@ -55,203 +76,158 @@ export default function EditorToolbar({
   onSaveProject,
   onSaveProjectAs,
 }) {
-  const hold = (event) => event.preventDefault();
+  const theme = useTheme();
+  const isStructure = STRUCTURE_STYLES.some((style) => style.value === activeStyle);
 
   return (
-    <header
-      className={`editor-toolbar ${compact ? "is-compact" : ""}`}
-      role="toolbar"
-      aria-label="Editor toolbar"
-    >
-      <button
-        type="button"
-        className="toolbar-icon-btn"
-        aria-label="Toggle book panel"
-        aria-pressed={leftPanelOpen}
-        title="Toggle panel (⌘⇧B)"
-        onMouseDown={hold}
-        onClick={onToggleLeftPanel}
-      >
-        ☰
-      </button>
+    <header className="app-toolbar" data-print="hide">
+      <Toolbar label="Editor toolbar" className="app-toolbar__row">
+        <IconButton
+          icon="panel"
+          label="Binder"
+          shortcut="⌘⇧B"
+          pressed={leftPanelOpen}
+          onClick={onToggleLeftPanel}
+          preserveSelection
+        />
+        <Wordmark className="app-toolbar__wordmark" />
+        <FileMenu
+          disabled={exporting}
+          onNewProject={onNewProject}
+          onOpenProject={onOpenProject}
+          onSaveProject={onSaveProject}
+          onSaveProjectAs={onSaveProjectAs}
+          onExport={onExport}
+        />
 
-      <FileMenu
-        disabled={exporting}
-        onNewProject={onNewProject}
-        onOpenProject={onOpenProject}
-        onSaveProject={onSaveProject}
-        onSaveProjectAs={onSaveProjectAs}
-        onExport={onExport}
-      />
+        <input
+          className="app-toolbar__title"
+          value={title ?? ""}
+          aria-label="Book title"
+          placeholder="Untitled book"
+          title={filename}
+          onChange={(event) => onTitleChange?.(event.target.value)}
+        />
 
-      <div className="toolbar-group" role="group" aria-label="History">
-        <button
-          type="button"
-          className="toolbar-icon-btn"
-          aria-label="Undo"
-          title="Undo (⌘Z)"
-          disabled={!canUndo}
-          onMouseDown={hold}
-          onClick={onUndo}
-        >
-          ↶
-        </button>
-        <button
-          type="button"
-          className="toolbar-icon-btn"
-          aria-label="Redo"
-          title="Redo (⌘⇧Z)"
-          disabled={!canRedo}
-          onMouseDown={hold}
-          onClick={onRedo}
-        >
-          ↷
-        </button>
-      </div>
+        <ToolbarDivider className="app-toolbar__history-divider" />
 
-      <input
-        className="toolbar-title"
-        value={title ?? ""}
-        aria-label="Book title"
-        placeholder="Untitled book"
-        onChange={(event) => onTitleChange?.(event.target.value)}
-      />
+        <ToolbarGroup label="History">
+          <IconButton icon="undo" label="Undo" shortcut="⌘Z" disabled={!canUndo} onClick={onUndo} preserveSelection />
+          <IconButton icon="redo" label="Redo" shortcut="⌘⇧Z" disabled={!canRedo} onClick={onRedo} preserveSelection />
+        </ToolbarGroup>
 
-      {!compact && (
-        <>
-          <div className="toolbar-group" role="group" aria-label="Writing mode">
-            {WRITING_MODES.map((style) => (
-              <button
-                key={style.id}
-                type="button"
-                className={
-                  activeStyle === style.id
-                    ? "toolbar-btn is-active"
-                    : "toolbar-btn"
-                }
-                onMouseDown={hold}
-                onClick={() => onStyleChange?.(style.id)}
-                title={`${style.label} (${MODE_SHORTCUTS[style.id] ?? ""})`}
-              >
-                {style.label}
-              </button>
-            ))}
+        <ToolbarDivider className="app-toolbar__format" />
 
-            <select
-              className="toolbar-select"
-              aria-label="Book structure style"
-              value={
-                STRUCTURE_STYLES.some((style) => style.id === activeStyle)
-                  ? activeStyle
-                  : ""
-              }
-              onChange={(event) =>
-                event.target.value && onStyleChange?.(event.target.value)
-              }
-            >
-              <option value="">Structure…</option>
-              {STRUCTURE_STYLES.map((style) => (
-                <option key={style.id} value={style.id}>
-                  {style.label}
-                </option>
+        <ToolbarGroup label="Paragraph style" className="app-toolbar__format">
+          <SegmentedControl
+            className="app-toolbar__modes"
+            label="Paragraph style"
+            options={WRITING_MODES}
+            value={activeStyle}
+            onChange={onStyleChange}
+            preserveSelection
+          />
+          <Select
+            className="app-toolbar__structure"
+            aria-label="More paragraph styles"
+            placeholder="More styles"
+            options={STRUCTURE_STYLES}
+            value={isStructure ? activeStyle : ""}
+            onChange={(event) => event.target.value && onStyleChange?.(event.target.value)}
+          />
+          {/* Narrow windows: one select holds every paragraph style. */}
+          <Select
+            className="app-toolbar__modes-compact"
+            aria-label="Paragraph style"
+            value={activeStyle ?? "normal"}
+            onChange={(event) => onStyleChange?.(event.target.value)}
+          >
+            <optgroup label="Writing">
+              {WRITING_MODES.map((style) => (
+                <option key={style.value} value={style.value}>{style.label}</option>
               ))}
-            </select>
-          </div>
+            </optgroup>
+            <optgroup label="Book structure">
+              {STRUCTURE_STYLES.map((style) => (
+                <option key={style.value} value={style.value}>{style.label}</option>
+              ))}
+            </optgroup>
+          </Select>
+        </ToolbarGroup>
 
-          <select
-            className="toolbar-select toolbar-font"
-            aria-label="Font family"
-            value={typography?.fontFamilyId ?? ""}
-            onChange={(event) =>
-              onTypographyChange?.({ fontFamilyId: event.target.value })
-            }
-          >
-            {Object.values(KANNADA_FONTS).map((font) => (
-              <option key={font.id} value={font.id}>
-                {font.label}
-              </option>
-            ))}
-          </select>
+        <MenuButton label="Format" className="app-toolbar__format">
+          <MenuLabel>Paragraph alignment</MenuLabel>
+          {ALIGNMENTS.map((item) => (
+            <MenuItem
+              key={item.value}
+              checked={item.value === align}
+              onSelect={() => onAlignChange?.(item.value)}
+            >
+              {item.label}
+            </MenuItem>
+          ))}
+          <MenuSeparator />
+          <MenuLabel>Book font</MenuLabel>
+          {KANNADA_FONTS.map((font) => (
+            <MenuItem
+              key={font.id}
+              checked={typography?.fontFamilyId === font.id}
+              onSelect={() => onTypographyChange?.({ fontFamilyId: font.id })}
+            >
+              {font.label}
+            </MenuItem>
+          ))}
+          <MenuSeparator />
+          <MenuLabel>Text size</MenuLabel>
+          {FONT_SIZES.map((size) => (
+            <MenuItem
+              key={size}
+              checked={typography?.fontSizePt === size}
+              onSelect={() => onTypographyChange?.({ fontSizePt: size })}
+            >
+              {size} pt
+            </MenuItem>
+          ))}
+        </MenuButton>
 
-          <select
-            className="toolbar-select toolbar-size"
-            aria-label="Font size"
-            value={typography?.fontSizePt ?? 11}
-            onChange={(event) =>
-              onTypographyChange?.({ fontSizePt: Number(event.target.value) })
-            }
-          >
-            {FONT_SIZES.map((size) => (
-              <option key={size} value={size}>
-                {size}pt
-              </option>
-            ))}
-          </select>
+        <ToolbarSpacer />
 
-          <div className="toolbar-group" role="group" aria-label="Alignment">
-            {[
-              ["left", "⯇", "Left"],
-              ["center", "≡", "Center"],
-              ["right", "⯈", "Right"],
-              ["justify", "☰", "Justify"],
-            ].map(([value, glyph, label]) => (
-              <button
-                key={value}
-                type="button"
-                className={
-                  align === value ? "toolbar-btn is-active" : "toolbar-btn"
-                }
-                title={label}
-                aria-label={label}
-                onMouseDown={hold}
-                onClick={() => onAlignChange?.(value)}
-              >
-                {glyph}
-              </button>
-            ))}
-          </div>
+        <Button
+          icon="focus"
+          pressed={focusMode}
+          onClick={onToggleFocusMode}
+          preserveSelection
+          title="Focus mode (⌘⇧F)"
+          className="app-toolbar__focus"
+        >
+          Focus
+        </Button>
 
-          <button
-            type="button"
-            className="toolbar-btn"
-            disabled={!canComment}
-            title="Comment on selected text"
-            onMouseDown={hold}
-            onClick={onComment}
-          >
-            💬 Comment
-          </button>
-        </>
-      )}
+        <MenuButton label="View" align="right" className="app-toolbar__view">
+          <MenuItem toggle checked={focusMode} onSelect={onToggleFocusMode} shortcut="⌘⇧F">
+            Focus mode
+          </MenuItem>
+          <MenuItem toggle checked={commentsOpen} onSelect={onToggleComments}>
+            {unresolvedComments > 0 ? `Comments (${unresolvedComments} open)` : "Comments"}
+          </MenuItem>
+          <MenuItem toggle checked={leftPanelOpen} onSelect={onToggleLeftPanel} shortcut="⌘⇧B">
+            Binder
+          </MenuItem>
+          <MenuSeparator />
+          <MenuLabel>Theme</MenuLabel>
+          {THEMES.map((option) => (
+            <MenuItem
+              key={option.value}
+              checked={theme.choice === option.value}
+              onSelect={() => theme.setChoice(option.value)}
+            >
+              {option.label}
+            </MenuItem>
+          ))}
+        </MenuButton>
 
-      <div className="toolbar-spacer" />
-
-      <button
-        type="button"
-        className={`toolbar-btn ${commentsOpen ? "is-active" : ""}`}
-        onMouseDown={hold}
-        onClick={onToggleComments}
-        title="Comments panel"
-      >
-        Comments{unresolvedComments > 0 ? ` (${unresolvedComments})` : ""}
-      </button>
-
-      <button
-        type="button"
-        className={`toolbar-btn ${focusMode ? "is-active" : ""}`}
-        onMouseDown={hold}
-        onClick={onToggleFocusMode}
-        title="Focus mode (⌘⇧F)"
-      >
-        Focus
-      </button>
-
-      <span className="toolbar-file" title={filename}>
-        <strong>{filename}</strong>
-        <em>{saveStatusLabel}</em>
-      </span>
-
-      <ExportMenu disabled={exporting} onExport={onExport} />
+        <ExportMenu className="app-toolbar__export" disabled={exporting} onExport={onExport} />
+      </Toolbar>
     </header>
   );
 }

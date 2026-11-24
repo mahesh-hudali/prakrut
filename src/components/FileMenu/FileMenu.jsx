@@ -1,5 +1,4 @@
-import { useAnchoredMenu } from "../../hooks/useAnchoredMenu";
-import "./FileMenu.css";
+import { MenuButton, MenuItem, MenuLabel, MenuSeparator } from "../../design-system";
 
 export default function FileMenu({
   disabled = false,
@@ -9,94 +8,17 @@ export default function FileMenu({
   onSaveProjectAs,
   onExport,
 }) {
-  const { open, setOpen, toggle, triggerRef, menuRef, menuStyle } =
-    useAnchoredMenu();
-
-  const run = (action) => () => {
-    setOpen(false);
-    action?.();
-  };
-
   return (
-    <div className="file-menu">
-      <button
-        ref={triggerRef}
-        type="button"
-        className="toolbar-btn"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        disabled={disabled}
-        onClick={toggle}
-      >
-        File ▾
-      </button>
-
-      {open && (
-        <div
-          ref={menuRef}
-          className="file-dropdown"
-          style={menuStyle}
-          role="menu"
-          aria-label="File"
-        >
-          <button
-            type="button"
-            role="menuitem"
-            className="file-dropdown-item"
-            onClick={run(onNewProject)}
-          >
-            New Project
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="file-dropdown-item"
-            onClick={run(onOpenProject)}
-          >
-            Open Project…
-          </button>
-
-          <div className="file-dropdown-sep" role="separator" />
-
-          <button
-            type="button"
-            role="menuitem"
-            className="file-dropdown-item"
-            onClick={run(onSaveProject)}
-          >
-            Save Project
-            <span className="file-shortcut">⌘S</span>
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="file-dropdown-item"
-            onClick={run(onSaveProjectAs)}
-          >
-            Save Project As…
-          </button>
-
-          <div className="file-dropdown-sep" role="separator" />
-
-          <div className="file-dropdown-title">Export</div>
-          <button
-            type="button"
-            role="menuitem"
-            className="file-dropdown-item"
-            onClick={run(() => onExport?.("pdf"))}
-          >
-            PDF
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="file-dropdown-item"
-            onClick={run(() => onExport?.("docx"))}
-          >
-            DOCX
-          </button>
-        </div>
-      )}
-    </div>
+    <MenuButton label="File" disabled={disabled}>
+      <MenuItem icon="file" onSelect={onNewProject}>New project</MenuItem>
+      <MenuItem onSelect={onOpenProject} shortcut="⌘O">Open project…</MenuItem>
+      <MenuSeparator />
+      <MenuItem onSelect={onSaveProject} shortcut="⌘S">Save</MenuItem>
+      <MenuItem onSelect={onSaveProjectAs} shortcut="⌘⇧S">Save as…</MenuItem>
+      <MenuSeparator />
+      <MenuLabel>Export</MenuLabel>
+      <MenuItem icon="download" onSelect={() => onExport?.("pdf")}>PDF</MenuItem>
+      <MenuItem icon="download" onSelect={() => onExport?.("docx")}>Word (DOCX)</MenuItem>
+    </MenuButton>
   );
 }

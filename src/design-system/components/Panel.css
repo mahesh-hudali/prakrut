@@ -1,0 +1,127 @@
+.ds-panel {
+  width: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--color-chrome);
+  transition: width var(--motion-normal) var(--easing-standard);
+}
+
+.ds-panel--left {
+  border-right: 1px solid transparent;
+}
+
+.ds-panel--right {
+  border-left: 1px solid transparent;
+}
+
+.ds-panel.is-open {
+  width: var(--panel-width);
+  border-color: var(--color-border);
+}
+
+/* Fixed inner width: content never reflows while the panel animates. */
+.ds-panel__inner {
+  width: var(--panel-width);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ds-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.ds-panel__title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.ds-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.ds-panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.ds-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ds-panel__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--control-sm);
+}
+
+.ds-panel__section-title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.ds-empty {
+  padding: var(--space-6) var(--space-2);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.ds-empty__title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+.ds-empty__body {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* Narrow screens: float over the page instead of squeezing it. */
+@media (max-width: 1100px) {
+  .ds-panel.is-open {
+    position: fixed;
+    top: var(--toolbar-height);
+    bottom: 0;
+    z-index: var(--z-panel);
+    width: min(var(--panel-width), 88vw);
+    box-shadow: var(--elevation-dialog);
+  }
+
+  .ds-panel--left.is-open {
+    left: 0;
+  }
+
+  .ds-panel--right.is-open {
+    right: 0;
+    box-shadow: calc(var(--space-3) * -1) 0 32px -12px rgba(0, 0, 0, 0.3);
+  }
+
+  .ds-panel.is-open .ds-panel__inner {
+    width: 100%;
+  }
+}

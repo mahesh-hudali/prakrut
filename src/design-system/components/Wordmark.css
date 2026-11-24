@@ -1,0 +1,10 @@
+.ds-wordmark {
+  font-family: var(--font-display-kn);
+  font-size: var(--text-xl);
+  line-height: 1;
+  color: var(--color-accent);
+  /* Kannada vowel signs sit low; nudge the optical baseline up. */
+  padding-bottom: 2px;
+  white-space: nowrap;
+  user-select: none;
+}

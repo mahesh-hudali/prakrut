@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
+const EDGE = 8;
+
 /**
- * Dropdown state for a toolbar button.
+ * Open/close state and placement for a menu attached to a trigger button.
  *
- * The toolbar is a horizontal scroll container, which clips absolutely
- * positioned children — so menus are placed with `position: fixed` against the
- * trigger's viewport rect instead, and reposition on scroll/resize.
+ * Menus use `position: fixed` against the trigger's viewport rect, so a
+ * scrolling or clipped parent (toolbar, panel) never cuts them off. They flip
+ * above the trigger when there is no room below and stay inside the viewport.
  */
 export function useAnchoredMenu({ align = "left" } = {}) {
   const [open, setOpen] = useState(false);
@@ -16,11 +18,18 @@ export function useAnchoredMenu({ align = "left" } = {}) {
   const reposition = useCallback(() => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setPosition({
-      top: rect.bottom + 6,
-      left: align === "right" ? undefined : rect.left,
-      right: align === "right" ? window.innerWidth - rect.right : undefined,
-    });
+    const menu = menuRef.current;
+    const width = menu?.offsetWidth ?? 0;
+    const height = menu?.offsetHeight ?? 0;
+
+    let left = align === "right" ? rect.right - width : rect.left;
+    left = Math.max(EDGE, Math.min(left, window.innerWidth - width - EDGE));
+
+    let top = rect.bottom + 6;
+    if (top + height > window.innerHeight - EDGE && rect.top - height - 6 > EDGE) {
+      top = rect.top - height - 6;
+    }
+    setPosition({ top, left });
   }, [align]);
 
   useLayoutEffect(() => {
@@ -39,8 +48,14 @@ export function useAnchoredMenu({ align = "left" } = {}) {
       }
       setOpen(false);
     };
+
+    // Escape closes the menu even before focus has moved into it (e.g. it was
+    // opened with the mouse and Escape pressed straight away).
     const onKeyDown = (event) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+      setOpen(false);
+      triggerRef.current?.focus({ preventScroll: true });
     };
 
     document.addEventListener("pointerdown", onPointerDown);
@@ -62,6 +77,7 @@ export function useAnchoredMenu({ align = "left" } = {}) {
     toggle: () => setOpen((value) => !value),
     triggerRef,
     menuRef,
-    menuStyle: position ?? { top: -9999, left: -9999 },
+    // Rendered invisibly first so it can be measured, then placed.
+    menuStyle: open && position ? position : { top: 0, left: 0, visibility: "hidden" },
   };
 }

@@ -2,7 +2,9 @@
  * Run utilities.
  *
  * A paragraph stores its text as an ordered list of runs:
- *   runs: [{ id, text, marks: [{ type: 'bold' | 'italic' | 'underline' }] }]
+ *   runs: [{ id, text, marks: [{ type: 'bold' | 'italic' | 'underline' }
+ *                            | { type: 'font', value: fontId }
+ *                            | { type: 'size', value: points }] }]
  *
  * Runs are the canonical storage for inline formatting. All helpers here are
  * pure so they can be reused by the editor, exporters and the .kbook
@@ -12,6 +14,8 @@
 import { createId } from "./ids.js";
 
 export const INLINE_MARK_TYPES = Object.freeze(["bold", "italic", "underline"]);
+/** Marks that carry a value (Google Docs-style per-selection formatting). */
+export const VALUE_MARK_TYPES = Object.freeze(["font", "size"]);
 
 export function createRun(text = "", marks = []) {
   return { id: createId("r"), text, marks: normalizeMarks(marks) };
@@ -24,6 +28,12 @@ export function normalizeMarks(marks) {
   for (const mark of marks ?? []) {
     const type = typeof mark === "string" ? mark : mark?.type;
     if (!type || seen.has(type)) continue;
+    if (VALUE_MARK_TYPES.includes(type)) {
+      if (mark?.value === undefined || mark?.value === null || mark?.value === "") continue;
+      seen.add(type);
+      result.push({ type, value: mark.value });
+      continue;
+    }
     seen.add(type);
     result.push({ type });
   }
@@ -35,7 +45,9 @@ export function marksEqual(a, b) {
   const left = normalizeMarks(a);
   const right = normalizeMarks(b);
   if (left.length !== right.length) return false;
-  return left.every((mark, index) => mark.type === right[index].type);
+  return left.every(
+    (mark, index) => mark.type === right[index].type && mark.value === right[index].value
+  );
 }
 
 export function hasMark(marks, type) {

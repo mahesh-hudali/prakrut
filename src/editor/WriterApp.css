@@ -1,0 +1,136 @@
+.writer-app {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  background: var(--color-canvas);
+}
+
+.writer-app--library {
+  overflow: auto;
+}
+
+.writer-toolbar {
+  height: var(--toolbar-height);
+  padding: 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  background: var(--color-chrome);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.writer-toolbar .ds-toolbar {
+  width: 100%;
+  gap: var(--space-2);
+}
+
+.writer-title {
+  flex: 0 1 220px;
+  min-width: 100px;
+  height: var(--control-md);
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-body-kn);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  text-overflow: ellipsis;
+}
+
+.writer-title:hover {
+  background: var(--color-hover);
+}
+
+.writer-title:focus {
+  outline: none;
+  background: var(--color-surface);
+  border-color: var(--color-accent);
+}
+
+.writer-toolbar .ds-select {
+  width: 140px;
+}
+
+.writer-toolbar .writer-size {
+  width: 80px;
+}
+
+.writer-toolbar .writer-theme {
+  width: 132px;
+}
+
+.writer-toolbar .writer-mark {
+  width: var(--control-md);
+  padding: 0;
+  font-family: var(--font-body-latin);
+  font-size: var(--text-md);
+}
+
+.writer-bold {
+  font-weight: 700;
+}
+
+.writer-italic {
+  font-style: italic;
+}
+
+.writer-underline {
+  text-decoration: underline;
+}
+
+.writer-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  height: var(--statusbar-height);
+  padding: 0 var(--space-4);
+  background: var(--color-chrome);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.writer-status__save {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-success);
+}
+
+.writer-status__save.is-error {
+  color: var(--color-warning);
+  font-weight: var(--weight-semibold);
+}
+
+.writer-status__action {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-warning);
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.writer-status__error {
+  color: var(--color-danger);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.writer-status__counts {
+  display: flex;
+  gap: var(--space-4);
+  margin-left: auto;
+}
+
+@media (max-width: 1280px) {
+  .writer-toolbar .writer-theme {
+    display: none;
+  }
+}
