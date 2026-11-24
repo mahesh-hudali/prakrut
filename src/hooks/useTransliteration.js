@@ -87,7 +87,9 @@ export function useTransliteration() {
         if (requestId === requestIdRef.current) {
           setError(
             err instanceof TypeError
-              ? "Transliteration server unreachable — restart the app with: npm start"
+              ? API_BASE
+                ? "Transliteration needs the local server — run: npm run backend"
+                : "Transliteration server unreachable — restart the app with: npm start"
               : err.message || "Transliteration failed"
           );
           clearSuggestions();

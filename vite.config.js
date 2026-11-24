@@ -11,6 +11,8 @@ const apiProxy = {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // GitHub Pages serves the app from /<repo>/; local runs stay at /.
+  base: process.env.VITE_BASE || '/',
   // Pinned rather than auto-incrementing: a silent fallback to another port
   // leaves stale servers running and makes it unclear which build a tab loaded.
   server: { port: 5173, strictPort: true, proxy: apiProxy },

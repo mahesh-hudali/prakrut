@@ -20,12 +20,29 @@ app = Flask(__name__)
 # Any local origin: Vite picks a different port whenever the default is taken,
 # and a hardcoded port list silently breaks transliteration when it does.
 # The server only binds to 127.0.0.1, so this stays local either way.
-CORS(
-    app,
-    resources={
-        r"/*": {"origins": [r"http://localhost:\d+", r"http://127\.0\.0\.1:\d+"]}
-    },
-)
+#
+# The hosted build on GitHub Pages also talks to this local server, so its
+# origin is allowed too. Extra origins can be added with XLIT_ALLOWED_ORIGINS
+# (comma-separated).
+ALLOWED_ORIGINS = [
+    r"http://localhost:\d+",
+    r"http://127\.0\.0\.1:\d+",
+    "https://mahesh-hudali.github.io",
+    *[o.strip() for o in os.environ.get("XLIT_ALLOWED_ORIGINS", "").split(",") if o.strip()],
+]
+CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
+
+
+@app.after_request
+def allow_private_network(response):
+    """Let an https page (the hosted editor) reach this 127.0.0.1 server.
+
+    Chrome's Private Network Access preflight asks for this header before a
+    public site may call a local address.
+    """
+    if request.headers.get("Access-Control-Request-Private-Network") == "true":
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
 
 
 @app.get("/health")
