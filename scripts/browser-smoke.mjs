@@ -227,6 +227,102 @@ console.log("\n4. Enter and Backspace join/split paragraphs");
   check("Backspace merges it back", countMerged === countBefore, `${countAfter} → ${countMerged}`);
 }
 
+console.log("\n4b. Undo and redo");
+{
+  const blockId = await page
+    .locator(".page-content [data-block-id]")
+    .filter({ hasText: /.{80,}/ })
+    .last()
+    .getAttribute("data-block-id");
+  const blockText = () =>
+    page.evaluate(
+      (id) =>
+        [...document.querySelectorAll(`.page-content [data-block-id="${id}"]`)]
+          .map((node) => node.textContent)
+          .join(""),
+      blockId
+    );
+  const placeAtEnd = () =>
+    page.evaluate((id) => {
+      const nodes = document.querySelectorAll(`.page-content [data-block-id="${id}"]`);
+      const el = nodes[nodes.length - 1];
+      el.closest(".page-content").focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }, blockId);
+
+  await placeAtEnd();
+  const before = await blockText();
+  await page.keyboard.type(" ಕಥೆ ಮುಗಿಯಿತು", { delay: 40 });
+  await page.waitForTimeout(400);
+  check("typed text reached the page", (await blockText()) === `${before} ಕಥೆ ಮುಗಿಯಿತು`);
+
+  await page.keyboard.press("ControlOrMeta+z");
+  await page.waitForTimeout(300);
+  check(
+    "undo removes the last word only",
+    (await blockText()) === `${before} ಕಥೆ `,
+    `tail "${(await blockText()).slice(before.length)}"`
+  );
+
+  await page.keyboard.press("ControlOrMeta+z");
+  await page.waitForTimeout(300);
+  check("second undo removes the first word", (await blockText()) === before,
+    `tail "${(await blockText()).slice(before.length)}"`);
+
+  await page.keyboard.press("ControlOrMeta+Shift+z");
+  await page.waitForTimeout(300);
+  check("redo restores the first word", (await blockText()) === `${before} ಕಥೆ `);
+
+  await page.keyboard.press("ControlOrMeta+Shift+z");
+  await page.waitForTimeout(300);
+  check("redo restores the second word", (await blockText()) === `${before} ಕಥೆ ಮುಗಿಯಿತು`);
+
+  // The caret must be back after the redone text, so typing continues there.
+  await page.keyboard.type("!");
+  await page.waitForTimeout(300);
+  check("caret is restored after redo", (await blockText()) === `${before} ಕಥೆ ಮುಗಿಯಿತು!`,
+    `tail "${(await blockText()).slice(before.length)}"`);
+
+  const countBefore = await page.locator(".page-content [data-block-id]").count();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(350);
+  await page.keyboard.press("ControlOrMeta+z");
+  await page.waitForTimeout(350);
+  const countAfter = await page.locator(".page-content [data-block-id]").count();
+  check("undo reverses a paragraph split", countAfter === countBefore, `${countBefore} → ${countAfter}`);
+
+  // Undo back to the original text so later sections see the sample document.
+  for (let i = 0; i < 3; i += 1) {
+    await page.keyboard.press("ControlOrMeta+z");
+    await page.waitForTimeout(250);
+  }
+  check("undo returns to the original text", (await blockText()) === before,
+    `tail "${(await blockText()).slice(before.length)}"`);
+
+  await page.getByRole("button", { name: "Redo" }).click();
+  await page.waitForTimeout(300);
+  check("toolbar Redo works", (await blockText()) === `${before} ಕಥೆ `);
+  await page.getByRole("button", { name: "Undo" }).click();
+  await page.waitForTimeout(300);
+  check("toolbar Undo works", (await blockText()) === before);
+
+  // The title field keeps its own native undo.
+  const title = page.getByLabel("Book title");
+  const titleBefore = await title.inputValue();
+  await title.click();
+  await title.press("End");
+  await page.keyboard.type("X");
+  await page.keyboard.press("ControlOrMeta+z");
+  await page.waitForTimeout(200);
+  check("undo in the title field stays in the field", (await blockText()) === before);
+  await title.fill(titleBefore);
+}
+
 console.log("\n5. Menus are visible");
 {
   const fileTrigger = page.getByRole("button", { name: "File ▾" });

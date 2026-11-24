@@ -44,6 +44,10 @@ export default function EditorToolbar({
   onToggleFocusMode,
   saveStatusLabel,
   filename,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
   exporting = false,
   onExport,
   onNewProject,
@@ -79,6 +83,31 @@ export default function EditorToolbar({
         onSaveProjectAs={onSaveProjectAs}
         onExport={onExport}
       />
+
+      <div className="toolbar-group" role="group" aria-label="History">
+        <button
+          type="button"
+          className="toolbar-icon-btn"
+          aria-label="Undo"
+          title="Undo (⌘Z)"
+          disabled={!canUndo}
+          onMouseDown={hold}
+          onClick={onUndo}
+        >
+          ↶
+        </button>
+        <button
+          type="button"
+          className="toolbar-icon-btn"
+          aria-label="Redo"
+          title="Redo (⌘⇧Z)"
+          disabled={!canRedo}
+          onMouseDown={hold}
+          onClick={onRedo}
+        >
+          ↷
+        </button>
+      </div>
 
       <input
         className="toolbar-title"

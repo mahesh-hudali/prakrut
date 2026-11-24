@@ -17,6 +17,7 @@ import SelectionToolbar from "../SelectionToolbar/SelectionToolbar";
 import TransliterationSuggestions from "../TransliterationSuggestions/TransliterationSuggestions";
 import { useComments } from "../../hooks/useComments";
 import { useDocument, usePagination } from "../../hooks/useDocument";
+import { useHistoryShortcuts } from "../../hooks/useHistoryShortcuts";
 import { SAVE_STATUS, useProject } from "../../hooks/useProject";
 import { useTextSelection } from "../../hooks/useTextSelection";
 import { useTransliteration } from "../../hooks/useTransliteration";
@@ -92,6 +93,7 @@ export default function BookEditor() {
     doc,
     setDoc,
     stats,
+    history,
     updateSettings,
     updateMetadata,
     updateBlockText,
@@ -108,7 +110,9 @@ export default function BookEditor() {
     moveChapter,
   } = useDocument();
 
-  const { pages, isPaginating, pageCount } = usePagination(doc);
+  const { pages, isPaginating, pageCount } = usePagination(doc, {
+    immediateToken: history.historyRevision,
+  });
   const xlit = useTransliteration();
   const {
     ui,
@@ -124,9 +128,11 @@ export default function BookEditor() {
   const commentsApi = useComments(doc, setDoc);
   const { selection, freeze, unfreeze, clearSelectionState } = useTextSelection();
 
+  // Opening, recovering or starting a project replaces the document outright
+  // and starts a fresh undo history.
   const project = useProject({
     doc,
-    setDoc,
+    setDoc: history.resetDocument,
     editorState: serializableUi,
     restoreUiState,
   });
@@ -433,6 +439,8 @@ export default function BookEditor() {
         absoluteOffset: context.sliceStart + caret,
       };
 
+      // Accepting a suggestion is its own undo step, separate from typing.
+      history.checkpoint();
       const full = getParagraphText(found.block);
       updateBlockText(
         context.chapterId,
@@ -443,7 +451,7 @@ export default function BookEditor() {
       xlit.clearSuggestions();
       xlit.setWordRange({ start: caret, end: caret, word: "" });
     },
-    [updateBlockText, xlit]
+    [history, updateBlockText, xlit]
   );
 
   latestHandlers.onPageKeyDown = (pageIndex, event) => {
@@ -592,6 +600,33 @@ export default function BookEditor() {
       document.removeEventListener("pointerdown", onPointerDown);
     };
   }, []);
+
+  // ---- Undo / redo ---------------------------------------------------------
+  const { undo, redo } = history;
+
+  const runHistory = useCallback(
+    (action) => {
+      // Read the caret before the jump: the DOM still shows the old document.
+      const context = caretContextRef.current();
+      const result = action();
+      if (!result) return;
+      xlit.clearSuggestions();
+      const caret =
+        result.caret ??
+        (context
+          ? { blockId: context.blockId, offset: context.absoluteOffset }
+          : null);
+      caretRestoreRef.current = caret
+        ? { blockId: caret.blockId, absoluteOffset: caret.offset }
+        : null;
+    },
+    [xlit]
+  );
+
+  const handleUndo = useCallback(() => runHistory(undo), [runHistory, undo]);
+  const handleRedo = useCallback(() => runHistory(redo), [runHistory, redo]);
+
+  useHistoryShortcuts({ undo: handleUndo, redo: handleRedo });
 
   // ---- Paragraph type / alignment ---------------------------------------
   const applyParagraphStyle = useCallback(
@@ -901,6 +936,10 @@ export default function BookEditor() {
         onToggleFocusMode={toggleFocusMode}
         saveStatusLabel={saveStatusLabel}
         filename={project.currentFilename}
+        canUndo={history.canUndo}
+        canRedo={history.canRedo}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
         exporting={exporting}
         onExport={handleExport}
         onNewProject={handleNewProject}
@@ -1009,7 +1048,7 @@ export default function BookEditor() {
                 ? xlit.error
                 : xlit.open
                   ? "↑↓ select · Enter accept · Space accept+continue · Esc"
-                  : "⌘⇧B panel · ⌘⇧F focus · ⌘1 character · ⌘2 action · ⌘3 dialogue")}
+                  : "⌘Z undo · ⌘⇧B panel · ⌘⇧F focus · ⌘1 character · ⌘2 action · ⌘3 dialogue")}
         </span>
       </footer>
 

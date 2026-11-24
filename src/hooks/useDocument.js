@@ -10,18 +10,20 @@ import {
 import { remapAnnotationsForParagraph } from "../models/annotations.js";
 import { normalizeRuns, toggleMarkOnRuns } from "../models/runs.js";
 import { paginateDocument } from "../utils/pagination.js";
+import { useUndoHistory } from "./useUndoHistory.js";
 
 /**
  * Debounced measure-based pagination.
  * Recalculates when content or layout-affecting settings change —
  * not on unrelated UI chrome updates.
  */
-export function usePagination(doc) {
+export function usePagination(doc, { immediateToken = 0 } = {}) {
   const [pages, setPages] = useState([]);
   const [isPaginating, setIsPaginating] = useState(false);
   const timerRef = useRef(null);
   const latestDocRef = useRef(doc);
   const structureRef = useRef("");
+  const immediateTokenRef = useRef(immediateToken);
 
   latestDocRef.current = doc;
 
@@ -66,8 +68,12 @@ export function usePagination(doc) {
       setIsPaginating(false);
     };
 
-    const structural = structureRef.current !== structureKey;
+    // Structural edits and undo/redo jumps reflow at once; typing debounces.
+    const structural =
+      structureRef.current !== structureKey ||
+      immediateTokenRef.current !== immediateToken;
     structureRef.current = structureKey;
+    immediateTokenRef.current = immediateToken;
 
     // Debounce to avoid a full remeasure on every keystroke.
     timerRef.current = setTimeout(() => {
@@ -82,7 +88,7 @@ export function usePagination(doc) {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [layoutKey, structureKey]);
+  }, [layoutKey, structureKey, immediateToken]);
 
   return { pages, isPaginating, pageCount: Math.max(pages.length, 1) };
 }
@@ -204,6 +210,7 @@ export function useDocument(initialDoc = null) {
   const [doc, setDoc] = useState(() => initialDoc ?? createDocument());
 
   const stats = useMemo(() => countDocumentStats(doc), [doc]);
+  const history = useUndoHistory(doc, setDoc);
 
   const updateSettings = useCallback((updater) => {
     setDoc((prev) => ({
@@ -479,6 +486,7 @@ export function useDocument(initialDoc = null) {
     doc,
     setDoc,
     stats,
+    history,
     updateSettings,
     updateMetadata,
     updateBlockText,

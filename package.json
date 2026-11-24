@@ -17,8 +17,9 @@
     "test:export": "node scripts/smoke-export.mjs",
     "test:integrity": "node scripts/project-integrity-test.mjs",
     "test:browser": "node scripts/browser-smoke.mjs",
-    "test": "npm run test:pagination && npm run test:export && npm run test:integrity",
-    "test:all": "npm test && npm run test:browser"
+    "test": "npm run test:pagination && npm run test:export && npm run test:integrity && npm run test:history",
+    "test:all": "npm test && npm run test:browser",
+    "test:history": "node scripts/history-test.mjs"
   },
   "dependencies": {
     "docx": "^9.7.1",

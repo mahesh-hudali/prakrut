@@ -37,9 +37,14 @@
   color: #3a352d;
 }
 
-.toolbar-icon-btn:hover,
+.toolbar-icon-btn:hover:not(:disabled),
 .toolbar-icon-btn[aria-pressed="true"] {
   background: #e2d9c5;
+}
+
+.toolbar-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .toolbar-title {
