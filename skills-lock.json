@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "skills": {
+    "ipview-ui-implementation": {
+      "source": "ZaccoTech/skills",
+      "commit": "cfbcf3994115617ae6a07bef06dbb9bc2e193b3f",
+      "sourceType": "github",
+      "skillPath": "skills/ipview-ui-implementation/SKILL.md",
+      "computedHash": "49fa0a8b96c80534e4fb4ccc047458d042e9d3f10161dee5ff1138e3671d379e"
+    }
+  }
+}

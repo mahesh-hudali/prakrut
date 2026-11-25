@@ -22,6 +22,7 @@ backend/corpus-bin/
 backend/indicxlit-en-indic-v1.0.zip
 backend/word_prob_dicts/
 
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -35,3 +36,8 @@ backend/word_prob_dicts/
 
 # Upstream AI4Bharat/IndicXlit clone (has its own git repo)
 backend/indicxlit-source/
+
+#skills
+.agents/
+.claude/
+agent/
