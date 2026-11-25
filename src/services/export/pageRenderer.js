@@ -49,6 +49,8 @@ function appendRunContent(el, item, documentModel, fallbackText) {
       if (mark.type === "bold") span.style.fontWeight = "700";
       if (mark.type === "italic") span.style.fontStyle = "italic";
       if (mark.type === "underline") span.style.textDecoration = "underline";
+      if (mark.type === "font") span.style.fontFamily = resolveFontStack(mark.value);
+      if (mark.type === "size") span.style.fontSize = `${mark.value}pt`;
     }
     el.appendChild(span);
   }

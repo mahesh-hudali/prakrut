@@ -121,6 +121,9 @@ export const BookParagraph = Node.create({
 
   addKeyboardShortcuts() {
     return {
+      // Home/End go to the start/end of the paragraph.
+      Home: ({ editor }) => editor.commands.selectTextblockStart(),
+      End: ({ editor }) => editor.commands.selectTextblockEnd(),
       // Screenplay flow: Enter after a character cue continues as dialogue;
       // after a heading or chapter title, back to normal prose.
       Enter: ({ editor }) => {
@@ -245,6 +248,10 @@ export const ExactTextInput = Extension.create({
               if (event.inputType !== "insertText" || !event.data) return false;
               if (event.isComposing || view.composing) return false;
               event.preventDefault();
+              // A caret move the browser has not reported yet (Home, a click,
+              // an arrow key pressed just before typing) is picked up first,
+              // so the text goes where the writer put the caret.
+              view.domObserver?.flush?.();
               const { from, to } = view.state.selection;
               view.dispatch(view.state.tr.insertText(event.data, from, to).scrollIntoView());
               return true;

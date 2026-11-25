@@ -67,10 +67,13 @@ function buildTextRuns(block, settings, displayText) {
   return sourceRuns.map((run) => {
     const marks = run.marks || [];
     const highlight = marks.find((m) => m.type === "highlight");
+    // Per-selection font and size (set in the editor) override the book's.
+    const fontMark = marks.find((m) => m.type === "font");
+    const sizeMark = marks.find((m) => m.type === "size");
     return new TextRun({
       text: run.text ?? "",
-      font,
-      size,
+      font: fontMark ? primaryFontName(fontMark.value) : font,
+      size: sizeMark ? Math.round(sizeMark.value * 2) : size,
       bold: baseBold || marks.some((m) => m.type === "bold"),
       italics: baseItalic || marks.some((m) => m.type === "italic"),
       underline: marks.some((m) => m.type === "underline")

@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { FontFamily, FontSize, TextStyle } from "@tiptap/extension-text-style";
 import TextAlign from "@tiptap/extension-text-align";
 import { closeHistory } from "@tiptap/pm/history";
+import { Focus } from "@tiptap/extensions";
 import TransliterationSuggestions from "../components/TransliterationSuggestions/TransliterationSuggestions";
 import { useTransliteration } from "../hooks/useTransliteration";
 import { settingsToCssVars } from "../models/documentModel";
@@ -42,6 +43,10 @@ function pageGeometry(settings) {
  *   onDocChange  receives the updated app model shortly after edits
  *   onEditor     receives the Tiptap editor instance (toolbar wiring)
  *   onPageCount  receives the number of pages after each layout pass
+ *   getBaseDoc   returns the app's current model (comments, metadata…)
+ *                that converted editor content is merged into
+ *   stageRef     ref to the scrolling stage (focus-mode typewriter scroll)
+ *   onAnnotationClick(commentId)  a comment highlight was clicked
  */
 export default function ManuscriptEditor({
   initialDoc,
@@ -50,6 +55,10 @@ export default function ManuscriptEditor({
   onDocChange,
   onEditor,
   onPageCount,
+  getBaseDoc,
+  stageRef,
+  onAnnotationClick,
+  transliterate = true,
 }) {
   const [pageCount, setPageCount] = useState(1);
   const mountedRef = useRef(false);
@@ -65,15 +74,16 @@ export default function ManuscriptEditor({
   const settingsRef = useRef(settings);
   const modelRef = useRef(initialDoc);
   const xlitRef = useRef(xlit);
-  const callbacksRef = useRef({ onDocChange, onPageCount });
+  const callbacksRef = useRef({ onDocChange, onPageCount, getBaseDoc, onAnnotationClick });
   const syncTimerRef = useRef(null);
   useLayoutEffect(() => {
     settingsRef.current = settings;
     xlitRef.current = xlit;
-    callbacksRef.current = { onDocChange, onPageCount };
+    callbacksRef.current = { onDocChange, onPageCount, getBaseDoc, onAnnotationClick };
   });
 
   const acceptRef = useRef(() => {});
+  const transliterateRef = useRef(transliterate);
   const relayoutRef = useRef(null);
 
   const editor = useEditor({
@@ -104,6 +114,8 @@ export default function ManuscriptEditor({
       Annotation,
       UniqueIds,
       ExactTextInput,
+      // Marks the paragraph being written (focus mode keeps it in full ink).
+      Focus.configure({ className: "has-focus", mode: "deepest" }),
       PageLayout.configure({
         getGeometry: () => pageGeometry(settingsRef.current),
         onLayout: ({ pageCount: count }) => {
@@ -118,35 +130,49 @@ export default function ManuscriptEditor({
     ],
     content: modelToPm(initialDoc),
     editorProps: {
-      attributes: { class: "manuscript", spellcheck: "false", lang: "kn", "aria-label": "Manuscript" },
+      attributes: {
+        class: "manuscript",
+        spellcheck: transliterate ? "false" : "true",
+        lang: transliterate ? "kn" : "en",
+        "aria-label": "Manuscript",
+      },
       // Suggestion keys (↑ ↓ Enter Space Esc) go to the transliteration
       // popup while it is open; everything else is normal editing.
       handleKeyDown: (_view, event) =>
         xlitRef.current.handleSuggestionKeys(event, {
           onAccept: (suggestion, options) => acceptRef.current(suggestion, options),
         }),
+      handleDOMEvents: {
+        click: (_view, event) => {
+          const mark = event.target?.closest?.(".comment-mark[data-comment-id]");
+          const commentId = mark?.dataset.commentId;
+          if (commentId) callbacksRef.current.onAnnotationClick?.(commentId);
+          return false;
+        },
+      },
     },
     onUpdate: ({ editor: instance }) => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
       syncTimerRef.current = setTimeout(() => {
-        const next = pmToModel(instance.getJSON(), {
-          ...modelRef.current,
-          settings: settingsRef.current,
-        });
+        const base = callbacksRef.current.getBaseDoc?.() ?? modelRef.current;
+        const next = pmToModel(instance.getJSON(), { ...base, settings: settingsRef.current });
         modelRef.current = next;
         callbacksRef.current.onDocChange?.(next);
       }, MODEL_SYNC_MS);
     },
-    onSelectionUpdate: ({ editor: instance }) => syncTransliteration(instance),
+    // Suggestions come from typing only. Moving the caret (click, arrows)
+    // closes them, so an existing English word is never converted by a
+    // Space the writer meant as a space.
     onTransaction: ({ editor: instance, transaction }) => {
       if (transaction.docChanged) syncTransliteration(instance);
+      else if (transaction.selectionSet) xlitRef.current.clearSuggestions();
     },
   });
 
   /** Look at the Roman word at the caret and ask for Kannada suggestions. */
   function syncTransliteration(instance) {
     const { view, state } = instance;
-    if (view.composing) return;
+    if (view.composing || !transliterateRef.current) return;
     const { selection } = state;
     if (!selection.empty) {
       xlitRef.current.clearSuggestions();
@@ -193,7 +219,7 @@ export default function ManuscriptEditor({
   const sheets = Array.from({ length: pageCount }, (_, index) => index);
 
   return (
-    <div className="manuscript-stage" data-scroll-root>
+    <div className="manuscript-stage" data-scroll-root ref={stageRef}>
       <div
         className="manuscript-stack"
         style={{

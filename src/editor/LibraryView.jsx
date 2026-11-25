@@ -53,15 +53,25 @@ function FolderStatus({ folder, onChoose, onReconnect }) {
 export default function LibraryView({ library }) {
   const { books, folder, save } = library;
   const [title, setTitle] = useState("");
+  const [language, setLanguage] = useState("kn");
+  const [kind, setKind] = useState("book");
   const [busy, setBusy] = useState(false);
 
+  const [asking, setAsking] = useState(false);
+
+  // "New book" asks for language and type in a small dialog first.
   const create = async (event) => {
     event.preventDefault();
+    if (!asking) {
+      setAsking(true);
+      return;
+    }
     setBusy(true);
     try {
-      await library.createBook(title.trim() || "Untitled book");
+      await library.createBook(title.trim() || "Untitled book", { language, kind });
     } finally {
       setBusy(false);
+      setAsking(false);
     }
   };
 
@@ -87,6 +97,49 @@ export default function LibraryView({ library }) {
           New book
         </Button>
       </form>
+
+      {asking ? (
+        <div className="library__dialog-backdrop" onClick={() => setAsking(false)}>
+          <form
+            className="library__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="New book"
+            onSubmit={create}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.key === "Escape" && setAsking(false)}
+          >
+            <h2>New book</h2>
+            <TextInput
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Title"
+              aria-label="Title"
+              autoFocus
+            />
+            <fieldset>
+              <legend>Writing language</legend>
+              {[["kn", "Kannada"], ["en", "English"]].map(([v, l]) => (
+                <label key={v}>
+                  <input type="radio" name="language" checked={language === v} onChange={() => setLanguage(v)} /> {l}
+                </label>
+              ))}
+            </fieldset>
+            <fieldset>
+              <legend>Type</legend>
+              {[["book", "Book"], ["script", "Script"]].map(([v, l]) => (
+                <label key={v}>
+                  <input type="radio" name="kind" checked={kind === v} onChange={() => setKind(v)} /> {l}
+                </label>
+              ))}
+            </fieldset>
+            <div className="library__dialog-actions">
+              <Button onClick={() => setAsking(false)}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={busy}>Create</Button>
+            </div>
+          </form>
+        </div>
+      ) : null}
 
       {books.length === 0 ? (
         <p className="library__empty">No books yet. Give your first book a title and start writing.</p>

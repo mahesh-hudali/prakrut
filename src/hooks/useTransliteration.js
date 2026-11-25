@@ -8,7 +8,15 @@ const DEBOUNCE_MS = 150;
 const REQUEST_TIMEOUT_MS = 6000;
 const WORD_CHAR = /[A-Za-z]/;
 
+/**
+ * The Roman word the writer is typing: it must end at (or run through) the
+ * caret. A caret placed just before an English word does not count — that
+ * word was not being typed, and Space must not convert it.
+ */
 export function getCurrentWord(text, caret) {
+  if (caret === 0 || !WORD_CHAR.test(text[caret - 1] ?? "")) {
+    return { word: "", start: caret, end: caret };
+  }
   let start = caret;
   while (start > 0 && WORD_CHAR.test(text[start - 1])) {
     start -= 1;

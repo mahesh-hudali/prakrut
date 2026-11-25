@@ -19,7 +19,8 @@
     "test:browser": "node scripts/browser-smoke.mjs",
     "test": "npm run test:pagination && npm run test:export && npm run test:integrity && npm run test:history",
     "test:all": "npm test && npm run test:browser",
-    "test:history": "node scripts/history-test.mjs"
+    "test:history": "node scripts/history-test.mjs",
+    "test:browser:classic": "node scripts/browser-smoke-classic.mjs"
   },
   "dependencies": {
     "@tiptap/core": "3.32.3",

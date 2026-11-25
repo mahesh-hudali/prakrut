@@ -20,6 +20,8 @@ import {
   writeEmergencyCopy,
 } from "../project/library/libraryStore.js";
 import { clearAutosave, loadAutosave } from "../project/storage/indexedDb.js";
+import { openProjectFile, saveProjectFile } from "../project/projectFile.js";
+import { createId } from "../models/ids.js";
 import { deserializeProject, serializeProject } from "../project/serializer/kbookSerializer.js";
 import { validateKbook } from "../project/validator/validateKbook.js";
 
@@ -85,7 +87,6 @@ export function useLibrary() {
   const folderRef = useRef(folder);
   const latestDocGetterRef = useRef(null);
   const timersRef = useRef({ browser: null, folder: null });
-  folderRef.current = folder;
 
   const root = () => (folderRef.current.status === "granted" ? folderRef.current.handle : null);
 
@@ -128,6 +129,8 @@ export function useLibrary() {
     bookRef.current = next;
     setBook(next);
     setPhase("editing");
+    const url = `${import.meta.env.BASE_URL}book/${encodeURIComponent(doc.metadata.id)}`;
+    if (location.pathname !== url) history.pushState(null, "", url);
     setSave((prev) => ({ ...prev, status: "saved", error: "" }));
     await setMeta("lastBookId", doc.metadata.id);
   }, []);
@@ -161,8 +164,22 @@ export function useLibrary() {
   );
 
   const createBook = useCallback(
-    async (title = "Untitled book") => {
-      const doc = createBlankDocument({ title });
+    async (title = "Untitled book", { language = "kn", kind = "book" } = {}) => {
+      const blank = createBlankDocument({ title });
+      // English books type plain English (no transliteration); scripts start in Action.
+      const doc = {
+        ...blank,
+        metadata: { ...blank.metadata, language, projectType: kind },
+        chapters: blank.chapters.map((c) => ({
+          ...c,
+          title: language === "en" ? "Chapter 1" : c.title,
+          blocks: c.blocks.map((b, i) =>
+            i === 0
+              ? language === "en" ? { ...b, runs: [{ ...b.runs[0], text: "Chapter 1" }] } : b
+              : { ...b, style: kind === "script" ? "action" : b.style }
+          ),
+        })),
+      };
       const dir = root();
       const folderName = dir ? await createBookFolder(dir, title) : null;
       await putBookRecord({
@@ -266,8 +283,14 @@ export function useLibrary() {
   /** Called with every settled editor change. */
   const updateDoc = useCallback(
     (next) => {
-      const merged = { ...docRef.current, ...next, metadata: docRef.current.metadata, settings: docRef.current.settings };
+      const previous = docRef.current;
+      const merged = { ...previous, ...next, metadata: previous.metadata, settings: previous.settings };
       docRef.current = merged;
+      // Comments whose text was deleted disappear from the panel too.
+      const ids = (list) => (list ?? []).map((item) => item.id).join(",");
+      if (ids(previous.comments) !== ids(merged.comments) || ids(previous.highlights) !== ids(merged.highlights)) {
+        setBook((prev) => (prev ? { ...prev, doc: merged } : prev));
+      }
       setSave((prev) => ({ ...prev, status: "saving" }));
       const timers = timersRef.current;
       clearTimeout(timers.browser);
@@ -290,6 +313,110 @@ export function useLibrary() {
     },
     [updateDoc]
   );
+
+  /** Change something the editor does not own (settings, comments…). */
+  const mutateDoc = useCallback(
+    (change) => {
+      docRef.current = change(docRef.current);
+      setBook((prev) => (prev ? { ...prev, doc: docRef.current } : prev));
+      updateDoc({});
+    },
+    [updateDoc]
+  );
+
+  const setSettings = useCallback(
+    (settings) => mutateDoc((doc) => ({ ...doc, settings })),
+    [mutateDoc]
+  );
+
+  const setFrontMatter = useCallback(
+    (key, value) => mutateDoc((doc) => ({ ...doc, frontMatter: { ...doc.frontMatter, [key]: value } })),
+    [mutateDoc]
+  );
+
+  // Comments and highlights: the editor holds where they are (marks); the
+  // model holds what they say. These keep the model side in step.
+  const addAnnotationRecords = useCallback(
+    ({ comment, highlight }) =>
+      mutateDoc((doc) => ({
+        ...doc,
+        comments: comment ? [...(doc.comments ?? []), comment] : doc.comments ?? [],
+        highlights: [...(doc.highlights ?? []), highlight],
+      })),
+    [mutateDoc]
+  );
+
+  const updateCommentText = useCallback(
+    (commentId, text) =>
+      mutateDoc((doc) => ({
+        ...doc,
+        comments: doc.comments.map((c) =>
+          c.id === commentId ? { ...c, text, updatedAt: new Date().toISOString() } : c
+        ),
+      })),
+    [mutateDoc]
+  );
+
+  const setCommentResolvedRecord = useCallback(
+    (commentId, resolved) =>
+      mutateDoc((doc) => ({
+        ...doc,
+        comments: doc.comments.map((c) =>
+          c.id === commentId ? { ...c, resolved, updatedAt: new Date().toISOString() } : c
+        ),
+        highlights: doc.highlights.map((h) => (h.commentId === commentId ? { ...h, resolved } : h)),
+      })),
+    [mutateDoc]
+  );
+
+  const deleteCommentRecord = useCallback(
+    (commentId) =>
+      mutateDoc((doc) => ({
+        ...doc,
+        comments: doc.comments.filter((c) => c.id !== commentId),
+        highlights: doc.highlights.filter((h) => h.commentId !== commentId),
+      })),
+    [mutateDoc]
+  );
+
+  /** Bring a .kbook file (e.g. from another computer) into the library. */
+  const importBookFile = useCallback(async () => {
+    const result = await openProjectFile();
+    if (result.cancelled) return;
+    if (!result.ok) {
+      setSave((prev) => ({ ...prev, error: result.message ?? "That file could not be opened." }));
+      return;
+    }
+    let doc = result.doc;
+    // Never overwrite a book that is already in the library.
+    if (await getBookRecord(doc.metadata.id)) {
+      doc = { ...doc, metadata: { ...doc.metadata, id: createId("proj") } };
+    }
+    const dir = root();
+    const folderName = dir ? await createBookFolder(dir, doc.metadata.title) : null;
+    await putBookRecord({
+      bookId: doc.metadata.id,
+      folderName,
+      title: doc.metadata.title,
+      payload: serializeProject(doc, {}),
+      savedAt: new Date().toISOString(),
+    });
+    if (dir && folderName) await saveBook(dir, folderName, doc, {});
+    await startEditing(doc, folderName, "import");
+  }, [startEditing]);
+
+  /** Save a copy anywhere (Save As). */
+  const saveCopy = useCallback(async () => {
+    const doc = currentDoc();
+    if (!doc) return;
+    try {
+      await saveProjectFile({ doc, editorState: {}, forcePicker: true });
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        setSave((prev) => ({ ...prev, error: "The copy could not be saved." }));
+      }
+    }
+  }, []);
 
   /** Save (⌘S): book.kbook plus a dated backup in the book's folder. */
   const saveNow = useCallback(async () => {
@@ -324,6 +451,7 @@ export function useLibrary() {
     await saveToBrowser();
     await saveToFolderBackup();
     await refreshBooks();
+    history.pushState(null, "", import.meta.env.BASE_URL);
     setPhase("library");
   }, [refreshBooks, saveToBrowser, saveToFolderBackup]);
 
@@ -344,7 +472,10 @@ export function useLibrary() {
       }
       await refreshBooks();
 
-      const lastId = await getMeta("lastBookId");
+      // Always land on the library; the book is reopened from the list.
+      // /book/<id> opens that book; / lands on the library.
+      const match = location.pathname.match(/\/book\/([^/]+)$/);
+      const lastId = match ? decodeURIComponent(match[1]) : null;
       if (lastId) {
         const record = await getBookRecord(lastId);
         const emergency = takeEmergencyCopy(lastId);
@@ -356,6 +487,11 @@ export function useLibrary() {
             await putBookRecord({ ...(record ?? {}), bookId: lastId, title: doc.metadata.title, payload: emergency.payload, savedAt: emergency.savedAt });
           }
           await startEditing(doc, record?.folderName ?? null, "browser");
+          // The folder copy may lag the browser copy by a few seconds (the
+          // tab closed before it was written): bring it up to date now.
+          if (folderRef.current.status === "granted" && record?.folderName) {
+            await saveToFolderBackup();
+          }
           return;
         }
       }
@@ -364,7 +500,7 @@ export function useLibrary() {
     return () => {
       cancelled = true;
     };
-  }, [refreshBooks, startEditing]);
+  }, [refreshBooks, saveToFolderBackup, startEditing]);
 
   // Closing or reloading the tab: keep the very latest text.
   useEffect(() => {
@@ -384,8 +520,20 @@ export function useLibrary() {
     clearTimeout(timersRef.current.folder);
   }, []);
 
+  const getDoc = useCallback(() => docRef.current, []);
+
   return {
     phase,
+    getDoc,
+    setSettings,
+    setFrontMatter,
+    addAnnotationRecords,
+    updateCommentText,
+    setCommentResolvedRecord,
+    deleteCommentRecord,
+    importBookFile,
+    saveCopy,
+    currentDoc,
     folder,
     books,
     book,

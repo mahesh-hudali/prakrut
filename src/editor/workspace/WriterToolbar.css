@@ -1,0 +1,106 @@
+.writer-toolbar {
+  position: relative;
+  z-index: var(--z-toolbar);
+  height: var(--toolbar-height);
+  padding: 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  background: var(--color-chrome);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.writer-toolbar .ds-toolbar {
+  width: 100%;
+  gap: var(--space-1);
+}
+
+.writer-title {
+  flex: 0 1 200px;
+  min-width: 80px;
+  height: var(--control-md);
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-body-kn);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  text-overflow: ellipsis;
+}
+
+.writer-title:hover {
+  background: var(--color-hover);
+}
+
+.writer-title:focus {
+  outline: none;
+  background: var(--color-surface);
+  border-color: var(--color-accent);
+}
+
+.writer-toolbar .writer-style {
+  width: 132px;
+}
+
+.writer-toolbar .writer-font {
+  width: 150px;
+}
+
+.writer-toolbar .writer-size {
+  width: 72px;
+}
+
+.writer-toolbar .writer-mark {
+  width: var(--control-md);
+  padding: 0;
+  font-family: var(--font-body-latin);
+  font-size: var(--text-md);
+}
+
+.writer-bold {
+  font-weight: 700;
+}
+
+.writer-italic {
+  font-style: italic;
+}
+
+.writer-underline {
+  text-decoration: underline;
+}
+
+/* Fold less-used controls as the window narrows (Binder › Layout keeps them). */
+@media (max-width: 1360px) {
+  .writer-toolbar .writer-font {
+    display: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .writer-toolbar .writer-format {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .writer-toolbar .writer-marks,
+  .writer-toolbar .writer-focus .ds-button__label {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .writer-toolbar .writer-style,
+  .writer-toolbar .writer-export,
+  .writer-toolbar .writer-focus,
+  .writer-toolbar .writer-books .ds-button__label {
+    display: none;
+  }
+
+  .writer-title {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}

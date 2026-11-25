@@ -1,0 +1,51 @@
+.writer-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.writer-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-warning);
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* ---- Focus mode: full screen, only the page -------------------------------- */
+.writer-app.is-focus-mode .writer-toolbar,
+.writer-app.is-focus-mode .status-bar {
+  display: none;
+}
+
+/* A save problem is never hidden, even while writing. */
+.writer-app.is-focus-mode .status-bar.needs-attention {
+  display: flex;
+}
+
+.writer-app.is-focus-mode .manuscript-stage {
+  background: var(--color-canvas-focus);
+  /* Room above and below so typewriter scrolling can centre any line. */
+  padding-top: 30vh;
+  padding-bottom: 50vh;
+}
+
+.writer-app.is-focus-mode .manuscript-sheet {
+  box-shadow: none;
+}
+
+.writer-app.is-focus-mode .manuscript-sheet__number {
+  display: none;
+}
+
+/* The paragraph being written stays in full ink; the rest recede. */
+.writer-app.is-focus-mode .manuscript .page-paragraph {
+  transition: opacity var(--motion-slow) var(--easing-standard);
+}
+
+.writer-app.is-focus-mode .manuscript:focus-within .page-paragraph:not(.has-focus) {
+  opacity: 0.28;
+}

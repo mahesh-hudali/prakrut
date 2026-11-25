@@ -11,7 +11,7 @@ function caretRectInPage() {
   if (!selection || selection.rangeCount === 0) return null;
   const node = selection.focusNode;
   const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-  if (!element?.closest?.(".page-content")) return null;
+  if (!element?.closest?.(".page-content, .manuscript")) return null;
 
   const range = selection.getRangeAt(0).cloneRange();
   range.collapse(false);
@@ -47,7 +47,7 @@ export function useFocusMode({ enabled, stageRef }) {
     };
 
     const onKeyDown = (event) => {
-      if (!event.target?.closest?.(".page-content")) return;
+      if (!event.target?.closest?.(".page-content, .manuscript")) return;
       lastTypedAtRef.current = Date.now();
       clearTimeout(timer);
       setPointerActive(false);

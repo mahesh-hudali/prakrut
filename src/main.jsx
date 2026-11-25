@@ -1,22 +1,22 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import './design-system/tokens.css'
 import './design-system/base.css'
-import { lazy, Suspense } from 'react'
-import App from './App.jsx'
+import WriterApp from './editor/WriterApp.jsx'
 
-// ?editor=next opens the new ProseMirror editor with the book library.
-const WriterApp = lazy(() => import('./editor/WriterApp.jsx'))
-const useNextEditor = new URLSearchParams(location.search).get('editor') === 'next'
+// The previous page-based editor stays reachable at ?editor=classic while the
+// new editor settles in; it is loaded only when asked for.
+const ClassicApp = lazy(() => import('./App.jsx'))
+const classic = new URLSearchParams(location.search).get('editor') === 'classic'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {useNextEditor ? (
+    {classic ? (
       <Suspense fallback={null}>
-        <WriterApp />
+        <ClassicApp />
       </Suspense>
     ) : (
-      <App />
+      <WriterApp />
     )}
   </StrictMode>,
 )
