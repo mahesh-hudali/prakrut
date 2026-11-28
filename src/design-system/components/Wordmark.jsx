@@ -7,6 +7,7 @@ import "./Wordmark.css";
 export function Wordmark({ className = "" }) {
   return (
     <span className={`ds-wordmark ${className}`} lang="kn" aria-label="Prakrut">
+      <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="ds-wordmark__mark" />
       ಪ್ರಾಕೃತ
     </span>
   );
